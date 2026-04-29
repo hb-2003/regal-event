@@ -1,0 +1,21 @@
+node_modules
+dist
+build
+*.log
+.DS_Store
+.env
+.env.*
+!.env.example
+.idea
+.vscode
+*.suo
+*.ntvs*
+.next
+
+# SQLite database files (data, do not commit)
+*.db
+*.db-shm
+*.db-wal
+
+# Uploaded user content
+public/uploads
