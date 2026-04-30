@@ -78,7 +78,9 @@ export default function AdminSidebar() {
       <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between px-4 py-3"
         style={{ backgroundColor: "#012D32", borderBottom: "1px solid rgba(252,205,151,0.1)" }}>
         <Link href="/admin/dashboard" className="flex items-center gap-2">
-          <Image src="/Final Logo.png" alt="Regal Event" width={32} height={32} className="object-contain" />
+          <div style={{ width:32, height:32, borderRadius:"50%", overflow:"hidden", background:"#022C32", filter:"drop-shadow(0 0 8px rgba(252,205,151,0.28))" }}>
+            <Image src="/Final Logo.png" alt="Regal Event" width={32} height={32} style={{ objectFit:"cover", width:"100%", height:"100%", display:"block", transform:"scale(1.04)" }} />
+          </div>
           <span style={{ color:"#FCCD97", fontFamily:"var(--font-cormorant),serif", letterSpacing:".08em", fontWeight:600 }}>REGAL</span>
         </Link>
         <button
@@ -120,8 +122,10 @@ export default function AdminSidebar() {
           style={{ borderColor: "rgba(252,205,151,0.1)" }}
         >
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 flex-shrink-0">
-              <Image src="/Final Logo.png" alt="Regal Event" width={44} height={44} className="object-contain w-full h-full" />
+            <div className="flex-shrink-0" style={{ filter:"drop-shadow(0 0 10px rgba(252,205,151,0.3)) drop-shadow(0 3px 8px rgba(0,0,0,0.5))" }}>
+              <div style={{ width:44, height:44, borderRadius:"50%", overflow:"hidden", background:"#022C32" }}>
+                <Image src="/Final Logo.png" alt="Regal Event" width={44} height={44} style={{ objectFit:"cover", width:"100%", height:"100%", display:"block", transform:"scale(1.04)" }} />
+              </div>
             </div>
             <div>
               <p className="font-bold text-sm leading-tight"

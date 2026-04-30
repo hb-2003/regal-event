@@ -148,6 +148,23 @@ export default function TrackPage() {
           <div className="page-hero-eyebrow">Booking Status</div>
           <h1 className="page-hero-title"><span className="gold-shimmer">Track Your Booking</span></h1>
           <p className="page-hero-sub">Enter your Booking ID to see the latest status</p>
+          <div
+            className="reveal"
+            style={{
+              display: "flex",
+              gap: 12,
+              justifyContent: "center",
+              flexWrap: "wrap",
+              marginTop: 24,
+            }}
+          >
+            <Link href="/book" className="btn-gold" style={{ minWidth: 160, justifyContent: "center" }}>
+              <span>Book Event</span>
+            </Link>
+            <Link href="/contact" className="btn-outline" style={{ minWidth: 160, justifyContent: "center" }}>
+              Contact Us
+            </Link>
+          </div>
         </div>
       </div>
       <section className="section-tight" style={{ background:"#011F23" }}>

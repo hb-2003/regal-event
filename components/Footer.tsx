@@ -36,13 +36,11 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <Link href="/" style={{ display:"flex", alignItems:"center", gap:14, textDecoration:"none", marginBottom:20 }}>
-              <div style={{
-                width:56, height:56, borderRadius:"50%", overflow:"hidden", flexShrink:0,
-                boxShadow:"0 0 0 2px #FCCD97, 0 0 0 5px rgba(252,205,151,0.1), 0 8px 24px rgba(0,0,0,0.5)",
-                background:"#F9F4EE",
-              }}>
-                <Image src="/Final Logo.png" alt="Regal Event" width={56} height={56}
-                  style={{ objectFit:"contain", width:"100%", height:"100%", transform:"scale(1.15)", mixBlendMode:"multiply" }} />
+              <div style={{ flexShrink:0, filter:"drop-shadow(0 0 16px rgba(252,205,151,0.38)) drop-shadow(0 6px 16px rgba(0,0,0,0.55))" }}>
+                <div style={{ width:60, height:60, borderRadius:"50%", overflow:"hidden", background:"#012D32" }}>
+                  <Image src="/Final Logo.png" alt="Regal Event" width={60} height={60}
+                    style={{ objectFit:"cover", width:"100%", height:"100%", display:"block", transform:"scale(1.04)" }} />
+                </div>
               </div>
               <div>
                 <span style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"1.25rem", fontWeight:600, color:"#F9F4EE", display:"block", letterSpacing:".1em" }}>REGAL EVENT</span>

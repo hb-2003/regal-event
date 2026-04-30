@@ -41,24 +41,30 @@ export default function CursorFollower() {
     const addHover    = () => ringRef.current?.classList.add("is-hovering");
     const removeHover = () => ringRef.current?.classList.remove("is-hovering");
 
-    // Attach after a short delay so dynamic content is rendered
-    const attachTimer = setTimeout(() => {
-      document.querySelectorAll("a, button, [role='button'], .cat-card").forEach(el => {
-        el.addEventListener("mouseenter", addHover);
-        el.addEventListener("mouseleave", removeHover);
-      });
-    }, 400);
+    const handleMouseOver = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("a, button, [role='button'], .cat-card, .gal-item, .vid-card")) {
+        addHover();
+      }
+    };
+
+    const handleMouseOut = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("a, button, [role='button'], .cat-card, .gal-item, .vid-card")) {
+        removeHover();
+      }
+    };
+
+    document.body.addEventListener("mouseover", handleMouseOver);
+    document.body.addEventListener("mouseout", handleMouseOut);
 
     return () => {
       cancelAnimationFrame(raf);
-      clearTimeout(attachTimer);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup",   onUp);
-      document.querySelectorAll("a, button, [role='button'], .cat-card").forEach(el => {
-        el.removeEventListener("mouseenter", addHover);
-        el.removeEventListener("mouseleave", removeHover);
-      });
+      document.body.removeEventListener("mouseover", handleMouseOver);
+      document.body.removeEventListener("mouseout", handleMouseOut);
     };
   }, []);
 

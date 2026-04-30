@@ -3,6 +3,9 @@ import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SmoothScroll from "@/components/SmoothScroll";
+import Preloader from "@/components/Preloader";
+import CursorFollower from "@/components/CursorFollower";
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
@@ -36,9 +39,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${cormorant.variable} ${jost.variable}`}>
       <body className="min-h-screen flex flex-col" style={{ backgroundColor:"#011F23", color:"#F9F4EE" }}>
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <Preloader />
+        <CursorFollower />
+        <div className="grain-overlay" aria-hidden="true" />
+        <SmoothScroll>
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </SmoothScroll>
       </body>
     </html>
   );
