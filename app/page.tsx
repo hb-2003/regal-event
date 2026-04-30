@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Magnetic from "@/components/Magnetic";
 import TextReveal from "@/components/TextReveal";
+import HeroWebGL from "@/components/HeroWebGL";
 
 type Category = { id: number; name: string; slug: string; description: string; image: string | null };
 type GalleryItem = { id: number; image_path: string; title: string };
@@ -45,7 +46,6 @@ export default function HomePage() {
   const [flipped, setFlipped] = useState<number | null>(null);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const heroRef = useRef<HTMLElement>(null);
   const mosaicRef = useRef<HTMLDivElement>(null);
   const heroBgRef = useRef<HTMLDivElement>(null);
@@ -65,77 +65,6 @@ export default function HomePage() {
     onChange();
     mq.addEventListener("change", onChange);
     return () => mq.removeEventListener("change", onChange);
-  }, []);
-
-  // Three.js particles — disabled on small screens (perf + battery)
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    if (window.matchMedia("(max-width: 767px), (prefers-reduced-motion: reduce)").matches) return;
-
-    let raf = 0;
-    let disposeRenderer: (() => void) | null = null;
-
-    import("three").then((THREE) => {
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-      renderer.setSize(innerWidth, innerHeight);
-
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(70, innerWidth / innerHeight, 0.1, 1000);
-      camera.position.z = 5;
-
-      const N = 120;
-      const pos = new Float32Array(N * 3);
-      const orig = new Float32Array(N * 3);
-      for (let i = 0; i < N; i++) {
-        const x = (Math.random() - .5) * 15, y = (Math.random() - .5) * 8, z = (Math.random() - .5) * 5;
-        pos[i*3]=orig[i*3]=x; pos[i*3+1]=orig[i*3+1]=y; pos[i*3+2]=orig[i*3+2]=z;
-      }
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-      const mat = new THREE.PointsMaterial({ color: 0xFCCD97, size: 0.038, transparent: true, opacity: 0.62, sizeAttenuation: true });
-      const pts = new THREE.Points(geo, mat);
-      scene.add(pts);
-
-      let pmx = 0, pmy = 0;
-      const onMouseMove = (e: MouseEvent) => {
-        pmx = (e.clientX / innerWidth - .5) * 2;
-        pmy = -(e.clientY / innerHeight - .5) * 2;
-      };
-      window.addEventListener("mousemove", onMouseMove);
-
-      const tick = () => {
-        raf = requestAnimationFrame(tick);
-        const t = Date.now() * 0.00028;
-        const p = geo.attributes.position.array as Float32Array;
-        for (let i = 0; i < N; i++) {
-          p[i*3]   = orig[i*3]   + pmx * (.1 + (i%5) * .025);
-          p[i*3+1] = orig[i*3+1] + Math.sin(t + i * .38) * .07;
-          p[i*3+2] = orig[i*3+2] + pmy * .05;
-        }
-        geo.attributes.position.needsUpdate = true;
-        pts.rotation.y = t * .018 + pmx * .04;
-        renderer.render(scene, camera);
-      };
-      tick();
-
-      const onResize = () => {
-        renderer.setSize(innerWidth, innerHeight);
-        camera.aspect = innerWidth / innerHeight;
-        camera.updateProjectionMatrix();
-      };
-      window.addEventListener("resize", onResize);
-
-      disposeRenderer = () => {
-        cancelAnimationFrame(raf);
-        window.removeEventListener("mousemove", onMouseMove);
-        window.removeEventListener("resize", onResize);
-        renderer.dispose();
-      };
-    });
-
-    return () => { disposeRenderer?.(); };
   }, []);
 
   // Mosaic mousemove — only for non-touch, non-small viewports
@@ -267,9 +196,9 @@ export default function HomePage() {
         ref={heroRef}
         className="hero-section"
       >
-        <div ref={heroBgRef} className="hero-bg" />
-        <div className="hero-overlay" />
-        <canvas ref={canvasRef} className="hero-canvas" />
+        <div ref={heroBgRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scale(1.15)' }}>
+          <HeroWebGL />
+        </div>
 
         <div className="hero-grid container-x">
           {/* Left content */}
@@ -558,17 +487,6 @@ export default function HomePage() {
           padding-top: clamp(96px, 14vw, 130px);
           padding-bottom: clamp(40px, 8vw, 72px);
         }
-        .hero-bg {
-          position: absolute; inset: 0;
-          background-image: url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=80');
-          background-size: cover; background-position: center top;
-          transform: scale(1.12);
-        }
-        .hero-overlay {
-          position: absolute; inset: 0;
-          background: linear-gradient(110deg, rgba(1,31,35,.94) 0%, rgba(1,89,97,.72) 55%, rgba(1,31,35,.48) 100%);
-        }
-        .hero-canvas { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
 
         .hero-grid {
           position: relative;
