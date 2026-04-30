@@ -47,5 +47,5 @@ export default function Magnetic({ children, intensity = 0.5 }: MagneticProps) {
   }, [intensity]);
 
   // Merge the ref onto the child element
-  return cloneElement(children, { ref });
+  return cloneElement(children, { ref } as any);
 }
