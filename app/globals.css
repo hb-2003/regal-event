@@ -81,6 +81,17 @@ img, video { max-width: 100%; height: auto; }
   -webkit-text-fill-color: transparent;
   animation: shimmer 6s linear infinite;
   font-style: italic; font-weight: 500;
+  display: inline-block;
+}
+
+/* Fix for SplitType splitting text inside gold-shimmer */
+.gold-shimmer .word,
+.gold-shimmer .char {
+  background: linear-gradient(90deg, #C9973D 0%, #FCCD97 30%, #FFF5DC 50%, #FCCD97 70%, #C9973D 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 6s linear infinite;
 }
 
 /* ── Fade up ────────────────────────────────────────── */
@@ -307,8 +318,8 @@ img, video { max-width: 100%; height: auto; }
   transition: opacity .65s ease, transform .65s ease;
 }
 .gal-item.visible { opacity: 1; transform: translateY(0); }
-.gal-item img { width: 100%; display: block; transition: transform .6s ease; }
-.gal-item:hover img { transform: scale(1.05); }
+.gal-item img { width: 100%; display: block; transition: transform .6s ease; transform: scale(1.15); }
+.gal-item:hover img { transform: scale(1.2); }
 .gal-veil {
   position: absolute; inset: 0;
   background: linear-gradient(to top, rgba(1,31,35,.88) 0%, transparent 55%);

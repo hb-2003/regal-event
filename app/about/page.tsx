@@ -1,7 +1,11 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import TextReveal from "@/components/TextReveal";
+import Magnetic from "@/components/Magnetic";
 
 const whyUs = [
   { icon:"♢", title:"Bespoke Designs", desc:"Every event uniquely crafted to reflect your personality, culture, and vision." },
@@ -18,9 +22,37 @@ const values = [
 ];
 
 export default function AboutPage() {
+  const badgeRef = useRef<HTMLDivElement>(null);
+  const ringRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const obs = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add("visible"); }), { threshold:0.15 });
     document.querySelectorAll(".reveal").forEach(el => obs.observe(el));
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Subtle parallax and rotation for the badge on scroll
+    if (badgeRef.current && ringRef.current) {
+      gsap.to(badgeRef.current, {
+        yPercent: -15,
+        ease: "none",
+        scrollTrigger: {
+          trigger: badgeRef.current.parentElement,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: true,
+        }
+      });
+
+      // Continuous slow rotation for the outer decorative ring
+      gsap.to(ringRef.current, {
+        rotation: 360,
+        duration: 25,
+        repeat: -1,
+        ease: "none"
+      });
+    }
+
     return () => obs.disconnect();
   }, []);
 
@@ -30,8 +62,8 @@ export default function AboutPage() {
       <div className="page-hero">
         <div className="page-hero-inner">
           <div className="page-hero-eyebrow">Who We Are</div>
-          <h1 className="page-hero-title"><span className="gold-shimmer">About Regal Event</span></h1>
-          <p className="page-hero-sub">London&apos;s trusted event decoration and planning specialists</p>
+          <TextReveal as="h1" className="page-hero-title"><span className="gold-shimmer">About Regal Event</span></TextReveal>
+          <p className="page-hero-sub fade-up" style={{ animationDelay: "0.5s", opacity: 0 }}>London&apos;s trusted event decoration and planning specialists</p>
         </div>
       </div>
 
@@ -40,7 +72,7 @@ export default function AboutPage() {
         <div className="container-x grid-1-2" style={{ maxWidth: 1100, marginInline:"auto", alignItems:"center" }}>
           <div>
             <div className="s-label reveal">Our Story</div>
-            <h2 className="lux-title reveal" style={{ transitionDelay:".1s", marginBottom:24 }}>Creating Magic<br/>Across <em>London</em></h2>
+            <TextReveal as="h2" className="lux-title" delay={0.1} style={{ marginBottom:24 }}>Creating Magic<br/>Across <em>London</em></TextReveal>
             <p className="reveal" style={{ color:"rgba(249,244,238,.55)", lineHeight:1.82, marginBottom:16, transitionDelay:".15s" }}>
               Regal Event London was founded with a single mission: to create extraordinary celebrations that leave lasting memories. Based in the heart of London, we have been transforming events across the city since 2019.
             </p>
@@ -61,19 +93,49 @@ export default function AboutPage() {
           </div>
           {/* Logo showcase */}
           <div className="reveal" style={{ display:"flex", justifyContent:"center", transitionDelay:".2s" }}>
-            <div style={{ position:"relative", width:"clamp(200px, 38vw, 280px)", aspectRatio:"1/1" }}>
+            <div ref={badgeRef} style={{ position:"relative", width:"clamp(260px, 42vw, 400px)", aspectRatio:"1/1", display:"flex", alignItems:"center", justifyContent:"center" }}>
+
+              {/* Unique Rotating SVG Text Ring */}
+              <div ref={ringRef} style={{ position: "absolute", inset: -20, zIndex: 1 }}>
+                <svg viewBox="0 0 200 200" width="100%" height="100%">
+                  <path id="textPath" d="M 100, 100 m -80, 0 a 80,80 0 1,1 160,0 a 80,80 0 1,1 -160,0" fill="none" />
+                  <text fill="#FCCD97" fontSize="11" fontWeight="500" letterSpacing="0.25em" style={{ textTransform: "uppercase", fontFamily: "var(--font-jost), sans-serif" }}>
+                    <textPath href="#textPath" startOffset="0%">
+                      London's Premier Event Atelier • Excellence in Every Detail •
+                    </textPath>
+                  </text>
+                </svg>
+              </div>
+
+              {/* The Logo Container */}
               <div style={{
-                width:"100%", height:"100%", borderRadius:"50%", overflow:"hidden",
-                boxShadow:"0 0 0 3px #FCCD97, 0 0 0 10px rgba(252,205,151,0.12), 0 40px 100px rgba(0,0,0,0.5)",
+                width:"82%", height:"82%", borderRadius:"50%", overflow:"hidden",
+                boxShadow:"0 0 0 1px rgba(252,205,151,0.3), 0 20px 60px rgba(0,0,0,0.5)",
                 background:"#F9F4EE",
+                position: "relative",
+                zIndex: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
               }}>
-                <Image src="/Final Logo.png" alt="Regal Event" width={280} height={280}
+                <Image src="/Final Logo.png" alt="Regal Event" width={320} height={320}
                   style={{ objectFit:"contain", width:"100%", height:"100%", transform:"scale(1.15)", mixBlendMode:"multiply" }} />
               </div>
-              <div style={{ position:"absolute", bottom:"-3%", right:"-3%", width:"32%", aspectRatio:"1/1", borderRadius:"50%", background:"#022C32", border:"2px solid rgba(252,205,151,.3)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", textAlign:"center" }}>
-                <span style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1rem, 4vw, 1.6rem)", fontWeight:600, color:"#FCCD97", lineHeight:1 }}>500+</span>
-                <span style={{ fontSize:".58rem", letterSpacing:".1em", color:"rgba(249,244,238,.45)", marginTop:2 }}>EVENTS</span>
-              </div>
+
+              {/* Magnetic 500+ Badge */}
+              <Magnetic intensity={0.6}>
+                <div style={{
+                  position:"absolute", bottom:"0%", right:"0%", width:"32%", aspectRatio:"1/1",
+                  borderRadius:"50%", background:"#022C32", border:"1px solid rgba(252,205,151,.6)",
+                  display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                  textAlign:"center", zIndex: 10,
+                  boxShadow: "0 20px 40px rgba(0,0,0,0.4)",
+                  cursor: "pointer"
+                }}>
+                  <span style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.1rem, 3.5vw, 1.6rem)", fontWeight:600, color:"#FCCD97", lineHeight:1 }}>500+</span>
+                  <span style={{ fontSize:".55rem", letterSpacing:".12em", color:"rgba(249,244,238,.6)", marginTop:4 }}>EVENTS</span>
+                </div>
+              </Magnetic>
             </div>
           </div>
         </div>
@@ -84,7 +146,7 @@ export default function AboutPage() {
         <div className="container-x" style={{ maxWidth: 1200, marginInline:"auto" }}>
           <div style={{ textAlign:"center", marginBottom:"clamp(36px,6vw,60px)" }}>
             <div className="s-label s-label-center reveal">The Regal Difference</div>
-            <h2 className="lux-title reveal" style={{ transitionDelay:".1s" }}>Why Choose <em>Us</em></h2>
+            <TextReveal as="h2" className="lux-title" delay={0.1}>Why Choose <em>Us</em></TextReveal>
           </div>
           <div className="grid-1-2-3">
             {whyUs.map((item,i)=>(
@@ -103,7 +165,7 @@ export default function AboutPage() {
         <div className="container-x" style={{ maxWidth: 880, marginInline:"auto" }}>
           <div style={{ textAlign:"center", marginBottom:"clamp(36px,6vw,60px)" }}>
             <div className="s-label s-label-center reveal">What Drives Us</div>
-            <h2 className="lux-title reveal" style={{ transitionDelay:".1s" }}>Our <em>Values</em></h2>
+            <TextReveal as="h2" className="lux-title" delay={0.1}>Our <em>Values</em></TextReveal>
           </div>
           <div className="grid-1-2-3">
             {values.map((v,i)=>(
@@ -121,11 +183,15 @@ export default function AboutPage() {
       <section style={{ paddingBlock:"clamp(60px, 9vw, 90px)", textAlign:"center", background:"linear-gradient(135deg,#015961 0%,#022C32 100%)", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", inset:0, background:"radial-gradient(ellipse at 30% 50%,rgba(252,205,151,.06) 0%,transparent 60%)" }} />
         <div className="container-x" style={{ position:"relative", zIndex:10, maxWidth:560, margin:"0 auto" }}>
-          <h2 className="lux-title reveal" style={{ marginBottom:16 }}>Let&apos;s Create Something <em>Beautiful</em></h2>
+          <TextReveal as="h2" className="lux-title" delay={0.1} style={{ marginBottom:16 }}>Let&apos;s Create Something <em>Beautiful</em></TextReveal>
           <p className="reveal" style={{ color:"rgba(249,244,238,.55)", marginBottom:36, transitionDelay:".1s" }}>Ready to start planning your perfect event?</p>
           <div className="reveal" style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", transitionDelay:".2s" }}>
-            <Link href="/book" className="btn-gold"><span>Book Your Event ✦</span></Link>
-            <Link href="/contact" className="btn-outline">Get in Touch</Link>
+            <Magnetic>
+              <Link href="/book" className="btn-gold"><span>Book Your Event ✦</span></Link>
+            </Magnetic>
+            <Magnetic>
+              <Link href="/contact" className="btn-outline">Get in Touch</Link>
+            </Magnetic>
           </div>
         </div>
       </section>

@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Magnetic from "@/components/Magnetic";
+import TextReveal from "@/components/TextReveal";
 
 type Category = { id: number; name: string; slug: string; description: string; image: string | null };
 type GalleryItem = { id: number; image_path: string; title: string };
@@ -178,6 +180,23 @@ export default function HomePage() {
       if (tlProgRef.current)
         gsap.to(tlProgRef.current, { height:"100%", ease:"none", scrollTrigger: { trigger:"#timeline", start:"top 65%", end:"bottom 65%", scrub:true } });
 
+      // Gallery Image Parallax
+      gsap.utils.toArray<HTMLElement>(".gal-item img").forEach((img) => {
+        gsap.fromTo(img,
+          { yPercent: -10 },
+          {
+            yPercent: 10,
+            ease: "none",
+            scrollTrigger: {
+              trigger: img.parentElement,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            }
+          }
+        );
+      });
+
       ctx = gsap.context(() => {});
     });
 
@@ -261,9 +280,9 @@ export default function HomePage() {
             </div>
 
             <h1 className="hero-title">
-              <span style={{ display:"block", animation:"fadeUp .9s ease .35s both" }}>We Craft</span>
-              <span style={{ display:"block", animation:"fadeUp .9s ease .5s both" }}><span className="gold-shimmer">Extraordinary</span></span>
-              <span style={{ display:"block", animation:"fadeUp .9s ease .65s both" }}>Moments</span>
+              <TextReveal delay={0.6}>
+                We Craft <span className="gold-shimmer">Extraordinary</span> Moments
+              </TextReveal>
             </h1>
 
             <p className="hero-sub">
@@ -271,13 +290,17 @@ export default function HomePage() {
             </p>
 
             <div className="hero-actions">
-              <Link href="/book" className="btn-gold">
-                <span>Begin Your Journey</span>
-              </Link>
-              <Link href="/gallery" className="hero-link">
-                <span className="hero-link-icon">▶</span>
-                View Portfolio
-              </Link>
+              <Magnetic>
+                <Link href="/book" className="btn-gold">
+                  <span>Begin Your Journey</span>
+                </Link>
+              </Magnetic>
+              <Magnetic intensity={0.3}>
+                <Link href="/gallery" className="hero-link">
+                  <span className="hero-link-icon">▶</span>
+                  View Portfolio
+                </Link>
+              </Magnetic>
             </div>
           </div>
 
@@ -336,7 +359,7 @@ export default function HomePage() {
         <div className="container-x" style={{ maxWidth: 1200, marginInline:"auto" }}>
           <div style={{ maxWidth:520, marginBottom:"clamp(36px,6vw,60px)" }}>
             <div className="s-label reveal">Our Expertise</div>
-            <h2 className="lux-title reveal" style={{ transitionDelay:".1s" }}>Crafted for Every<br/><em>Occasion</em></h2>
+            <TextReveal as="h2" className="lux-title" delay={0.1}>Crafted for Every <em>Occasion</em></TextReveal>
           </div>
           <div className="grid-1-2-3">
             {displayCats.map((cat, i) => (
@@ -369,7 +392,7 @@ export default function HomePage() {
             <div className="orn" style={{ justifyContent:"center", margin:"0 auto 18px" }}>
               <div className="orn-line rev" /><div className="orn-diamond" /><div className="orn-line" />
             </div>
-            <h2 className="lux-title reveal" style={{ transitionDelay:".1s" }}>From Vision to <em>Reality</em></h2>
+            <TextReveal as="h2" className="lux-title" delay={0.1}>From Vision to <em>Reality</em></TextReveal>
           </div>
 
           <div id="timeline" className="tl-wrap">
@@ -415,7 +438,7 @@ export default function HomePage() {
             <div style={{ display:"flex", alignItems:"flex-end", justifyContent:"space-between", marginBottom:"clamp(28px,5vw,52px)", flexWrap:"wrap", gap:16 }}>
               <div>
                 <div className="s-label">Portfolio</div>
-                <h2 className="lux-title">A Glimpse of <em>Distinction</em></h2>
+                <TextReveal as="h2" className="lux-title">A Glimpse of <em>Distinction</em></TextReveal>
               </div>
               <Link href="/gallery" style={{ fontSize:".72rem", letterSpacing:".14em", textTransform:"uppercase", color:"rgba(249,244,238,.55)", textDecoration:"none", transition:"color .3s" }}
                 onMouseEnter={(e)=>(e.currentTarget as HTMLElement).style.color="#FCCD97"}
@@ -442,7 +465,7 @@ export default function HomePage() {
             <div className="orn" style={{ justifyContent:"center", margin:"0 auto 18px" }}>
               <div className="orn-line rev" /><div className="orn-diamond" /><div className="orn-line" />
             </div>
-            <h2 className="lux-title reveal" style={{ transitionDelay:".1s" }}>Words of <em>Distinction</em></h2>
+            <TextReveal as="h2" className="lux-title" delay={0.1}>Words of <em>Distinction</em></TextReveal>
             <p className="testimonial-hint" style={{ color:"rgba(249,244,238,.38)", fontSize:".8rem", marginTop:10 }}>
               {isTouchDevice ? "Tap each card to reveal the full story" : "Hover each card to reveal the full story"}
             </p>
@@ -499,15 +522,19 @@ export default function HomePage() {
           <div className="orn" style={{ justifyContent:"center", margin:"0 auto 20px" }}>
             <div className="orn-line rev" /><div className="orn-diamond" /><div className="orn-line" />
           </div>
-          <h2 style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"var(--text-4xl)", fontWeight:300, lineHeight:1.1, color:"#F9F4EE", marginBottom:20 }}>
-            Your Extraordinary<br/><span className="gold-shimmer">Moment</span> Awaits
-          </h2>
+          <TextReveal as="h2" style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"var(--text-4xl)", fontWeight:300, lineHeight:1.1, color:"#F9F4EE", marginBottom:20 }}>
+            Your Extraordinary <span className="gold-shimmer">Moment</span> Awaits
+          </TextReveal>
           <p style={{ fontSize:".93rem", color:"rgba(249,244,238,.65)", lineHeight:1.76, marginBottom:36, maxWidth: 540, marginInline:"auto" }}>
             Let us craft an experience that reflects the remarkable occasion you deserve.
           </p>
           <div style={{ display:"flex", gap:16, justifyContent:"center", flexWrap:"wrap" }}>
-            <Link href="/book" className="btn-gold"><span>Schedule a Consultation</span></Link>
-            <Link href="/contact" className="btn-outline">Get in Touch</Link>
+            <Magnetic>
+              <Link href="/book" className="btn-gold"><span>Schedule a Consultation</span></Link>
+            </Magnetic>
+            <Magnetic>
+              <Link href="/contact" className="btn-outline">Get in Touch</Link>
+            </Magnetic>
           </div>
         </div>
       </section>
