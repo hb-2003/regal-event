@@ -12,10 +12,16 @@ export async function DELETE(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const db = getDb();
-  const row = db
-    .prepare("SELECT image_path FROM gallery WHERE id = ?")
-    .get(Number(id)) as { image_path: string } | undefined;
+  const db = await getDb();
+  const res = await db.execute({
+    sql: "SELECT image_path FROM gallery WHERE id = ?",
+    args: [Number(id)]
+  });
+
+  let row: { image_path: string } | undefined;
+  if (res.rows.length > 0) {
+    row = { image_path: String(res.rows[0].image_path || res.rows[0][0]) };
+  }
 
   if (!row) return NextResponse.json({ success: true });
 
@@ -32,6 +38,6 @@ export async function DELETE(
     }
   }
 
-  db.prepare("DELETE FROM gallery WHERE id = ?").run(Number(id));
+  await db.execute({ sql: "DELETE FROM gallery WHERE id = ?", args: [Number(id)] });
   return NextResponse.json({ success: true });
 }

@@ -5,10 +5,15 @@ import { requireAdmin } from "@/lib/auth";
 const YT_RE = /^https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\//i;
 
 export async function GET() {
-  const db = getDb();
-  const videos = db
-    .prepare("SELECT * FROM videos ORDER BY created_at DESC LIMIT 200")
-    .all();
+  const db = await getDb();
+  const res = await db.execute({ sql: "SELECT * FROM videos ORDER BY created_at DESC LIMIT 200", args: [] });
+  const videos = res.rows.map(row => {
+    const obj: any = {};
+    for (let i = 0; i < res.columns.length; i++) {
+      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
+    }
+    return obj;
+  });
   return NextResponse.json(videos);
 }
 
@@ -42,9 +47,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const db = getDb();
-  db.prepare(
-    "INSERT INTO videos (title, youtube_url, description) VALUES (?, ?, ?)"
-  ).run(title, youtube_url, description);
+  const db = await getDb();
+  await db.execute({
+    sql: "INSERT INTO videos (title, youtube_url, description) VALUES (?, ?, ?)",
+    args: [title, youtube_url, description]
+  });
   return NextResponse.json({ success: true }, { status: 201 });
 }

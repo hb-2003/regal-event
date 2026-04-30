@@ -47,6 +47,7 @@ export default function Showreel() {
 
           <div
             ref={containerRef}
+            className="vid-card"
             onClick={() => setIsPlaying(true)}
             style={{
               position: "relative",
@@ -54,6 +55,7 @@ export default function Showreel() {
               height: "clamp(400px, 60vh, 800px)",
               overflow: "hidden",
               cursor: "pointer", // Make it clickable
+              border: "none", // Override default vid-card border if needed
             }}
           >
             {/* Parallax Image / Video Wrap */}

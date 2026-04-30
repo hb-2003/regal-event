@@ -61,7 +61,7 @@ export default function AboutPage() {
       {/* Page Hero - Cinematic */}
       <div style={{ position: "relative", minHeight: "85vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0 }}>
-          <Image src="https://images.unsplash.com/photo-1519741347686-c1e0aadf4611?w=2000&q=80" alt="About Regal Event" fill style={{ objectFit: "cover", filter: "brightness(0.35) sepia(0.2) hue-rotate(-20deg)" }} priority />
+          <Image src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=2000&q=80" alt="About Regal Event" fill style={{ objectFit: "cover", filter: "brightness(0.35) sepia(0.2) hue-rotate(-20deg)" }} priority />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #011F23 0%, transparent 60%)" }} />
         </div>
         <div className="container-x" style={{ position: "relative", zIndex: 10, textAlign: "center", paddingTop: 80 }}>

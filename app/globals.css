@@ -368,22 +368,39 @@ img, video { max-width: 100%; height: auto; }
   transition: background .4s;
 }
 .cat-card:hover .cat-darken { background: linear-gradient(to top, rgba(1,31,35,.96) 0%, rgba(1,31,35,.5) 55%, transparent 100%); }
+
 .cat-body {
-  position: absolute; bottom: 0; left: 0; right: 0; padding: clamp(18px, 3vw, 28px);
-  transform: translateY(14px); transition: transform .4s ease;
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: clamp(18px, 3vw, 28px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
-.cat-card:hover .cat-body { transform: translateY(0); }
+
 .cat-desc {
   font-size: .81rem; color: rgba(249,244,238,.5); line-height: 1.65;
-  max-height: 0; overflow: hidden; opacity: 0;
-  transition: max-height .42s ease, opacity .42s;
+  opacity: 0;
+  transform: translateY(12px);
+  height: 0;
+  margin-top: 0;
+  transition: opacity .4s ease, transform .4s ease, height .4s ease, margin-top .4s ease;
+  pointer-events: none;
 }
-.cat-card:hover .cat-desc, .cat-card:focus-within .cat-desc { max-height: 120px; opacity: 1; }
+.cat-card:hover .cat-desc, .cat-card:focus-within .cat-desc {
+  opacity: 1;
+  transform: translateY(0);
+  height: auto;
+  margin-top: 12px;
+}
 
 /* On touch devices the description is always visible */
 @media (hover: none) {
-  .cat-body { transform: translateY(0); }
-  .cat-desc { max-height: 120px; opacity: 1; }
+  .cat-desc {
+    opacity: 1;
+    transform: translateY(0);
+    height: auto;
+    margin-top: 12px;
+  }
 }
 
 /* ── Video card ─────────────────────────────────────── */
@@ -524,6 +541,25 @@ input:focus, textarea:focus, select:focus { outline: none; }
 .cursor-ring.is-clicking {
   width: 18px; height: 18px;
   background: rgba(252,205,151,.18);
+}
+.cursor-ring.is-video {
+  width: 80px; height: 80px;
+  background: rgba(1,31,35, 0.7);
+  backdrop-filter: blur(4px);
+  border-color: #FCCD97;
+}
+.cursor-ring.is-video::after {
+  content: 'PLAY';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FCCD97;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  font-family: var(--font-jost), sans-serif;
 }
 @media (hover: none) {
   .cursor-dot, .cursor-ring { display: none !important; }

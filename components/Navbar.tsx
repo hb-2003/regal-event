@@ -132,73 +132,66 @@ export default function Navbar() {
       </button>
 
       {/* Mobile overlay */}
-      <button
-        type="button"
-        className="md:hidden"
-        aria-label="Close menu overlay"
-        onClick={() => setOpen(false)}
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "linear-gradient(180deg, rgba(0,10,12,0.62) 0%, rgba(0,8,10,0.76) 100%)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: "opacity .25s ease",
-          border: "none",
-          cursor: "pointer",
-          zIndex: 0,
-        }}
-      />
-
-      {/* Mobile menu */}
       <div
-        id="mobile-nav"
         className="md:hidden"
         aria-hidden={!open}
         style={{
-          position:"absolute", top:"100%", left:0, right:0,
-          background:"linear-gradient(140deg, rgba(1,31,35,0.76) 0%, rgba(2,44,50,0.68) 55%, rgba(1,31,35,0.8) 100%)",
-          backdropFilter:"blur(24px) saturate(140%)",
-          WebkitBackdropFilter:"blur(24px) saturate(140%)",
-          borderTop:"1px solid rgba(252,205,151,.24)",
-          boxShadow:"0 30px 70px rgba(0,0,0,.45), inset 0 1px 0 rgba(252,205,151,.18)",
-          paddingInline: "var(--gutter)",
-          paddingBlock: open ? "20px 26px" : "0 26px",
-          maxHeight: open ? "calc(100dvh - 80px)" : "0px",
-          overflowY: "auto",
-          overflowX: "hidden",
+          position: "fixed",
+          inset: 0,
+          background: "#011F23",
+          zIndex: -1, // behind the navbar itself, but covers the screen
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
           opacity: open ? 1 : 0,
           pointerEvents: open ? "auto" : "none",
-          transition: "max-height .35s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .25s ease",
-          zIndex: 1,
+          transition: "opacity 0.6s cubic-bezier(0.76, 0, 0.24, 1)",
+          overflow: "hidden"
         }}
       >
-        {links.map((l) => (
-          <Link key={l.href} href={l.href} style={{
-            display:"block", padding:"11px 0", textDecoration:"none",
-            fontFamily:"var(--font-jost),sans-serif", fontSize:".78rem",
-            letterSpacing:".14em", textTransform:"uppercase",
-            color: pathname===l.href ? "#FCCD97" : "rgba(249,244,238,.65)",
-            borderBottom:"1px solid rgba(252,205,151,.06)",
-          }}>{l.label}</Link>
-        ))}
-        <Link href="/book" className="btn-gold" style={{ display:"block", textAlign:"center", marginTop:18, padding:13 }}>
-          <span>Book Event</span>
-        </Link>
-        <Link
-          href="/track"
-          className="btn-outline"
-          style={{
-            display: "block",
-            textAlign: "center",
-            marginTop: 10,
-            padding: 13,
-          }}
-        >
-          Track Booking
-        </Link>
+        <div style={{ position: "relative", width: "100%", padding: "0 var(--gutter)" }}>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: "24px", alignItems: "center" }}>
+            {links.map((l, i) => (
+              <li key={l.href} style={{ overflow: "hidden" }}>
+                <Link
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  style={{
+                    display: "block",
+                    fontFamily: "var(--font-cormorant), serif",
+                    fontSize: "2.5rem",
+                    color: pathname === l.href ? "#FCCD97" : "#F9F4EE",
+                    textDecoration: "none",
+                    transform: open ? "translateY(0)" : "translateY(100%)",
+                    opacity: open ? 1 : 0,
+                    transition: `transform 0.6s cubic-bezier(0.76, 0, 0.24, 1) ${0.1 + i * 0.05}s, opacity 0.6s ease ${0.1 + i * 0.05}s, color 0.3s`,
+                  }}
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <div style={{
+            marginTop: "48px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+            alignItems: "center",
+            opacity: open ? 1 : 0,
+            transform: open ? "translateY(0)" : "translateY(20px)",
+            transition: `opacity 0.6s ease 0.4s, transform 0.6s cubic-bezier(0.76, 0, 0.24, 1) 0.4s`
+          }}>
+            <Link href="/book" className="btn-gold" onClick={() => setOpen(false)}>
+              <span>Book Event</span>
+            </Link>
+            <Link href="/track" className="btn-outline" onClick={() => setOpen(false)}>
+              Track Booking
+            </Link>
+          </div>
+        </div>
       </div>
     </nav>
   );

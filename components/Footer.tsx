@@ -1,5 +1,8 @@
 "use client";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const quickLinks = [["Home","/"],["About","/about"],["Services","/categories"],["Gallery","/gallery"],["Videos","/videos"],["Contact","/contact"]];
 const services = ["Birthday Decoration","Baby Shower","Engagement","Haldi Ceremony","Corporate Event","Anniversary"];
@@ -20,6 +23,29 @@ const contactItems = [
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger);
+
+    if (textRef.current) {
+      gsap.fromTo(
+        textRef.current,
+        { yPercent: 40, scale: 0.9 },
+        {
+          yPercent: 0,
+          scale: 1,
+          ease: "none",
+          scrollTrigger: {
+            trigger: textRef.current.parentElement,
+            start: "top bottom",
+            end: "bottom bottom",
+            scrub: true,
+          },
+        }
+      );
+    }
+  }, []);
 
   return (
     <footer style={{ background:"#010E10", position: "relative", overflow: "hidden", borderTop: "1px solid rgba(252,205,151,.05)" }}>
@@ -109,9 +135,10 @@ export default function Footer() {
           display: "flex",
           justifyContent: "center",
           borderBottom: "1px solid rgba(252,205,151,.05)",
-          paddingBottom: "clamp(20px, 4vw, 40px)"
+          paddingBottom: "clamp(20px, 4vw, 40px)",
+          overflow: "hidden"
         }}>
-          <span style={{
+          <span ref={textRef} style={{
             fontFamily: "var(--font-cormorant), serif",
             fontSize: "clamp(5rem, 18.5vw, 22rem)",
             fontWeight: 300,
@@ -119,7 +146,8 @@ export default function Footer() {
             letterSpacing: "-0.02em",
             color: "#F9F4EE",
             whiteSpace: "nowrap",
-            opacity: 0.95
+            opacity: 0.95,
+            display: "inline-block"
           }}>
             R E G A L
           </span>

@@ -35,10 +35,17 @@ export async function GET(
     return NextResponse.json({ error: "Invalid booking id" }, { status: 400 });
   }
 
-  const db = getDb();
-  const booking = db
-    .prepare("SELECT * FROM bookings WHERE booking_id = ?")
-    .get(id) as Booking | undefined;
+  const db = await getDb();
+  const res = await db.execute({ sql: "SELECT * FROM bookings WHERE booking_id = ?", args: [id] });
+  let booking: Booking | undefined;
+  if (res.rows.length > 0) {
+    const row = res.rows[0];
+    const obj: any = {};
+    for (let i = 0; i < res.columns.length; i++) {
+      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
+    }
+    booking = obj as Booking;
+  }
 
   if (!booking) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -85,17 +92,25 @@ export async function PATCH(
     ? String(body.admin_notes).slice(0, 2000)
     : null;
 
-  const db = getDb();
-  const booking = db
-    .prepare("SELECT * FROM bookings WHERE booking_id = ?")
-    .get(id) as Booking | undefined;
+  const db = await getDb();
+  const res = await db.execute({ sql: "SELECT * FROM bookings WHERE booking_id = ?", args: [id] });
+  let booking: Booking | undefined;
+  if (res.rows.length > 0) {
+    const row = res.rows[0];
+    const obj: any = {};
+    for (let i = 0; i < res.columns.length; i++) {
+      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
+    }
+    booking = obj as Booking;
+  }
   if (!booking) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  db.prepare(
-    "UPDATE bookings SET status = ?, admin_notes = ?, updated_at = datetime('now') WHERE booking_id = ?"
-  ).run(status, admin_notes, id);
+  await db.execute({
+    sql: "UPDATE bookings SET status = ?, admin_notes = ?, updated_at = datetime('now') WHERE booking_id = ?",
+    args: [status, admin_notes, id]
+  });
 
   try {
     await sendStatusUpdateToClient({
@@ -125,7 +140,7 @@ export async function DELETE(
   if (!BOOKING_ID_RE.test(id)) {
     return NextResponse.json({ error: "Invalid booking id" }, { status: 400 });
   }
-  const db = getDb();
-  db.prepare("DELETE FROM bookings WHERE booking_id = ?").run(id);
+  const db = await getDb();
+  await db.execute({ sql: "DELETE FROM bookings WHERE booking_id = ?", args: [id] });
   return NextResponse.json({ success: true });
 }

@@ -1,23 +1,29 @@
-import Database from "better-sqlite3";
-import path from "path";
+import { createClient, Client } from "@libsql/client";
 import bcrypt from "bcryptjs";
 
-const DB_PATH = path.join(process.cwd(), "regal-events.db");
+let db: Client | null = null;
 
-let db: Database.Database | null = null;
-
-function getDb(): Database.Database {
+export default async function getDb(): Promise<Client> {
   if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma("journal_mode = WAL");
-    db.pragma("foreign_keys = ON");
-    initSchema(db);
+    const url = process.env.DATABASE_URL || "file:regal-events.db";
+    const authToken = process.env.DATABASE_AUTH_TOKEN;
+
+    db = createClient({ url, authToken });
+
+    // Enable WAL and foreign keys if using a local file database
+    if (url.startsWith("file:")) {
+      await db.execute("PRAGMA journal_mode = WAL");
+      await db.execute("PRAGMA foreign_keys = ON");
+    }
+
+    await initSchema(db);
   }
   return db;
 }
 
-function initSchema(database: Database.Database) {
-  database.exec(`
+async function initSchema(database: Client) {
+  // executeMultiple allows running multiple statements in one call
+  await database.executeMultiple(`
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -80,29 +86,32 @@ function initSchema(database: Database.Database) {
     );
   `);
 
-  seedData(database);
+  await seedData(database);
 }
 
-function seedData(database: Database.Database) {
-  const adminExists = database
-    .prepare("SELECT id FROM admins WHERE username = ?")
-    .get("admin");
+async function seedData(database: Client) {
+  // Check if admin exists
+  const adminRes = await database.execute({
+    sql: "SELECT id FROM admins WHERE username = ?",
+    args: ["admin"]
+  });
 
-  if (!adminExists) {
+  if (adminRes.rows.length === 0) {
     const hash = bcrypt.hashSync(
       process.env.ADMIN_PASSWORD || "admin123",
       10
     );
-    database
-      .prepare("INSERT INTO admins (username, password) VALUES (?, ?)")
-      .run("admin", hash);
+    await database.execute({
+      sql: "INSERT INTO admins (username, password) VALUES (?, ?)",
+      args: ["admin", hash]
+    });
   }
 
-  const catCount = database
-    .prepare("SELECT COUNT(*) as count FROM categories")
-    .get() as { count: number };
+  // Check if categories exist
+  const catRes = await database.execute("SELECT COUNT(*) as count FROM categories");
+  const count = Number(catRes.rows[0]?.count || 0);
 
-  if (catCount.count === 0) {
+  if (count === 0) {
     const categories = [
       { name: "Baby Shower", slug: "baby-shower", description: "Beautiful celebrations welcoming a new arrival into the world." },
       { name: "Baby Welcome", slug: "baby-welcome", description: "Warm and joyful events to celebrate your precious newborn." },
@@ -120,13 +129,12 @@ function seedData(database: Database.Database) {
       { name: "National Festival", slug: "national-festival", description: "Vibrant festive celebrations for national occasions and holidays." },
     ];
 
-    const insert = database.prepare(
-      "INSERT INTO categories (name, slug, description, sort_order) VALUES (?, ?, ?, ?)"
-    );
-    categories.forEach((cat, i) =>
-      insert.run(cat.name, cat.slug, cat.description, i + 1)
-    );
+    for (let i = 0; i < categories.length; i++) {
+      const cat = categories[i];
+      await database.execute({
+        sql: "INSERT INTO categories (name, slug, description, sort_order) VALUES (?, ?, ?, ?)",
+        args: [cat.name, cat.slug, cat.description, i + 1]
+      });
+    }
   }
 }
-
-export default getDb;

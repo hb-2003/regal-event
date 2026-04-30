@@ -7,10 +7,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const db = getDb();
-  const category = db
-    .prepare("SELECT * FROM categories WHERE id = ?")
-    .get(Number(id));
+  const db = await getDb();
+  const res = await db.execute({ sql: "SELECT * FROM categories WHERE id = ?", args: [Number(id)] });
+  let category: any = undefined;
+  if (res.rows.length > 0) {
+    const row = res.rows[0];
+    category = {};
+    for (let i = 0; i < res.columns.length; i++) {
+      category[res.columns[i]] = row[i] ?? row[res.columns[i]];
+    }
+  }
   if (!category)
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(category);
@@ -44,10 +50,11 @@ export async function PATCH(
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
-  const db = getDb();
-  db.prepare(
-    "UPDATE categories SET name = ?, description = ?, image = ?, sort_order = ? WHERE id = ?"
-  ).run(name, description, image, sort_order, Number(id));
+  const db = await getDb();
+  await db.execute({
+    sql: "UPDATE categories SET name = ?, description = ?, image = ?, sort_order = ? WHERE id = ?",
+    args: [name, description, image, sort_order, Number(id)]
+  });
   return NextResponse.json({ success: true });
 }
 
@@ -59,7 +66,7 @@ export async function DELETE(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const db = getDb();
-  db.prepare("DELETE FROM categories WHERE id = ?").run(Number(id));
+  const db = await getDb();
+  await db.execute({ sql: "DELETE FROM categories WHERE id = ?", args: [Number(id)] });
   return NextResponse.json({ success: true });
 }

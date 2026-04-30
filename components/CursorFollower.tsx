@@ -43,14 +43,20 @@ export default function CursorFollower() {
 
     const handleMouseOver = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest("a, button, [role='button'], .cat-card, .gal-item, .vid-card")) {
+      if (target.closest(".vid-card")) {
+        ringRef.current?.classList.add("is-video");
+        addHover();
+      } else if (target.closest("a, button, [role='button'], .cat-card, .gal-item")) {
         addHover();
       }
     };
 
     const handleMouseOut = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest("a, button, [role='button'], .cat-card, .gal-item, .vid-card")) {
+      if (target.closest(".vid-card")) {
+        ringRef.current?.classList.remove("is-video");
+        removeHover();
+      } else if (target.closest("a, button, [role='button'], .cat-card, .gal-item")) {
         removeHover();
       }
     };

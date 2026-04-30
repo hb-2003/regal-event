@@ -5,10 +5,15 @@ import { requireAdmin } from "@/lib/auth";
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export async function GET() {
-  const db = getDb();
-  const categories = db
-    .prepare("SELECT * FROM categories ORDER BY sort_order ASC")
-    .all();
+  const db = await getDb();
+  const res = await db.execute({ sql: "SELECT * FROM categories ORDER BY sort_order ASC", args: [] });
+  const categories = res.rows.map(row => {
+    const obj: any = {};
+    for (let i = 0; i < res.columns.length; i++) {
+      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
+    }
+    return obj;
+  });
   return NextResponse.json(categories);
 }
 
@@ -43,9 +48,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
   }
 
-  const db = getDb();
-  db.prepare(
-    "INSERT INTO categories (name, slug, description, image, sort_order) VALUES (?, ?, ?, ?, ?)"
-  ).run(name, slug, description, image, sort_order);
+  const db = await getDb();
+  await db.execute({
+    sql: "INSERT INTO categories (name, slug, description, image, sort_order) VALUES (?, ?, ?, ?, ?)",
+    args: [name, slug, description, image, sort_order]
+  });
   return NextResponse.json({ success: true }, { status: 201 });
 }

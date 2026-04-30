@@ -55,10 +55,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  const db = getDb();
-  db.prepare(
-    "INSERT INTO contacts (full_name, email, phone, message) VALUES (?, ?, ?, ?)"
-  ).run(full_name, email, phone, message);
+  const db = await getDb();
+  await db.execute({
+    sql: "INSERT INTO contacts (full_name, email, phone, message) VALUES (?, ?, ?, ?)",
+    args: [full_name, email, phone, message]
+  });
 
   try {
     await sendContactAlertToAdmin({

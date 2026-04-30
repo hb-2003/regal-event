@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const auth = requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
-  const db = getDb();
+  const db = await getDb();
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const search = searchParams.get("search");
@@ -39,7 +39,17 @@ export async function GET(request: NextRequest) {
   if (conditions.length) query += " WHERE " + conditions.join(" AND ");
   query += " ORDER BY created_at DESC LIMIT 500";
 
-  const bookings = db.prepare(query).all(...params);
+  const res = await db.execute({ sql: query, args: params });
+
+  // Transform rows from @libsql/client
+  const bookings = res.rows.map(row => {
+    const obj: Record<string, any> = {};
+    for (let i = 0; i < res.columns.length; i++) {
+      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
+    }
+    return obj;
+  });
+
   return NextResponse.json(bookings);
 }
 
@@ -78,24 +88,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid guest count" }, { status: 400 });
   }
 
-  const db = getDb();
+  const db = await getDb();
   const booking_id = generateBookingId();
 
-  db.prepare(`
+  await db.execute({
+    sql: `
     INSERT INTO bookings (booking_id, full_name, phone, email, event_date, category, venue, guests, budget, notes)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    booking_id,
-    full_name,
-    phone,
-    email,
-    event_date,
-    category,
-    venue,
-    guests,
-    budget,
-    notes
-  );
+  `,
+    args: [
+      booking_id,
+      full_name,
+      phone,
+      email,
+      event_date,
+      category,
+      venue,
+      guests,
+      budget,
+      notes
+    ]
+  });
 
   try {
     await sendBookingConfirmationToClient({

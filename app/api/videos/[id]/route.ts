@@ -12,8 +12,8 @@ export async function DELETE(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const db = getDb();
-  db.prepare("DELETE FROM videos WHERE id = ?").run(Number(id));
+  const db = await getDb();
+  await db.execute({ sql: "DELETE FROM videos WHERE id = ?", args: [Number(id)] });
   return NextResponse.json({ success: true });
 }
 
@@ -51,9 +51,10 @@ export async function PATCH(
     );
   }
 
-  const db = getDb();
-  db.prepare(
-    "UPDATE videos SET title = ?, youtube_url = ?, description = ? WHERE id = ?"
-  ).run(title, youtube_url, description, Number(id));
+  const db = await getDb();
+  await db.execute({
+    sql: "UPDATE videos SET title = ?, youtube_url = ?, description = ? WHERE id = ?",
+    args: [title, youtube_url, description, Number(id)]
+  });
   return NextResponse.json({ success: true });
 }

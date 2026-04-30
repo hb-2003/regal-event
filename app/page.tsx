@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { gsap } from "gsap";
 import Magnetic from "@/components/Magnetic";
 import TextReveal from "@/components/TextReveal";
 import HeroWebGL from "@/components/HeroWebGL";
@@ -33,6 +34,14 @@ const placeholderCats = [
   { id:5, name:"Intimate Celebrations", slug:"celebrations", description:"Bespoke milestones curated with warmth.", image:null },
 ];
 
+const mosaicImgs = [
+  "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&q=80",
+  "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80",
+  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80",
+  "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80",
+  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&q=80",
+];
+
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
@@ -51,29 +60,39 @@ export default function HomePage() {
     fetch("/api/gallery").then(r=>r.json()).then(d=>setGallery(d.slice(0,9))).catch(()=>{});
   }, []);
 
-  // Mosaic mousemove — only for non-touch, non-small viewports
+  // Mosaic mousemove — optimized with GSAP for Awwwards-level smoothness
   useEffect(() => {
     const hero = heroRef.current, mosaic = mosaicRef.current;
     if (!hero || !mosaic) return;
     if (window.matchMedia("(hover: none), (max-width: 1023px)").matches) return;
 
-    const onMove = (e: MouseEvent) => {
-      const r = hero.getBoundingClientRect();
-      const dx = (e.clientX - r.left - r.width/2) / r.width;
-      const dy = (e.clientY - r.top - r.height/2) / r.height;
-      mosaic.style.transition = "transform .1s ease-out";
-      mosaic.style.transform = `rotateX(${-dy*11}deg) rotateY(${dx*13}deg)`;
-    };
-    const onLeave = () => {
-      mosaic.style.transition = "transform .9s ease";
-      mosaic.style.transform = "rotateX(0) rotateY(0)";
-    };
-    hero.addEventListener("mousemove", onMove);
-    hero.addEventListener("mouseleave", onLeave);
-    return () => {
-      hero.removeEventListener("mousemove", onMove);
-      hero.removeEventListener("mouseleave", onLeave);
-    };
+    let ctx = gsap.context(() => {
+      const rotYTo = gsap.quickTo(mosaic, "rotationY", { duration: 0.8, ease: "power3.out" });
+      const rotXTo = gsap.quickTo(mosaic, "rotationX", { duration: 0.8, ease: "power3.out" });
+
+      const onMove = (e: MouseEvent) => {
+        const r = hero.getBoundingClientRect();
+        const dx = (e.clientX - r.left - r.width/2) / r.width;
+        const dy = (e.clientY - r.top - r.height/2) / r.height;
+        rotYTo(dx * 15);
+        rotXTo(-dy * 15);
+      };
+
+      const onLeave = () => {
+        rotYTo(0);
+        rotXTo(0);
+      };
+
+      hero.addEventListener("mousemove", onMove);
+      hero.addEventListener("mouseleave", onLeave);
+
+      return () => {
+        hero.removeEventListener("mousemove", onMove);
+        hero.removeEventListener("mouseleave", onLeave);
+      };
+    });
+
+    return () => ctx.revert();
   }, []);
 
   // GSAP + ScrollTrigger
@@ -184,9 +203,9 @@ export default function HomePage() {
           <HeroWebGL />
         </div>
 
-        <div className="hero-grid container-x" style={{ display: 'block' }}>
+        <div className="hero-grid container-x">
           {/* Main content */}
-          <div className="hero-content" style={{ maxWidth: '800px', paddingTop: '10vh' }}>
+          <div className="hero-content" style={{ paddingTop: '10vh' }}>
             <div className="hero-eyebrow">
               <span />
               London&apos;s Premier Event Atelier
@@ -214,6 +233,17 @@ export default function HomePage() {
                   View Portfolio
                 </Link>
               </Magnetic>
+            </div>
+          </div>
+
+          {/* 5-Image Mosaic */}
+          <div className="hero-mosaic-wrap">
+            <div ref={mosaicRef} className="hero-mosaic">
+              {mosaicImgs.map((src, i) => (
+                <div key={i} className={`mosaic-pic mosaic-p${i+1}`}>
+                  <Image src={src} alt="Regal Event Portfolio" fill style={{ objectFit: "cover" }} sizes="(max-width: 1024px) 0vw, 33vw" priority={i < 2} />
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -297,7 +327,7 @@ export default function HomePage() {
           <div className="process-grid">
 
             {/* Sticky Left Column */}
-            <div className="process-sticky" style={{ position: "sticky", top: "120px", height: "fit-content" }}>
+            <div className="process-sticky">
               <div className="s-label reveal">The Regal Process</div>
               <TextReveal as="h2" className="lux-title" delay={0.1} style={{ marginBottom: 24 }}>From Vision to<br/><em>Reality</em></TextReveal>
               <p className="reveal" style={{ fontSize: "1.05rem", color: "rgba(249,244,238,.55)", lineHeight: 1.8, maxWidth: 380, transitionDelay: ".2s" }}>
@@ -501,12 +531,43 @@ export default function HomePage() {
         .hero-mosaic-wrap { display: none; }
         .hero-scroll-hint { display: none; }
 
+        .mosaic-pic {
+          position: absolute;
+          border-radius: 6px;
+          overflow: hidden;
+          box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+          transition: transform 0.4s ease;
+        }
+        .mosaic-pic img { transition: transform 0.6s ease; }
+        .mosaic-pic:hover img { transform: scale(1.08); }
+
+        .mosaic-p1 { width: 48%; height: 52%; top: 0; left: 8%; z-index: 2; transform: translateZ(20px); }
+        .mosaic-p2 { width: 44%; height: 48%; top: 12%; right: 0; z-index: 1; transform: translateZ(-10px); }
+        .mosaic-p3 { width: 52%; height: 56%; bottom: 8%; left: 0; z-index: 3; transform: translateZ(40px); }
+        .mosaic-p4 { width: 42%; height: 46%; bottom: 0; right: 8%; z-index: 2; transform: translateZ(15px); }
+        .mosaic-p5 { width: 38%; height: 42%; top: 38%; left: 32%; z-index: 4; transform: translateZ(60px); }
+
+        .process-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 48px;
+        }
+        .process-sticky {
+          position: relative;
+          z-index: 10;
+        }
+
         @media (min-width: 1024px) {
           .process-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 80px;
             align-items: start;
+          }
+          .process-sticky {
+            position: sticky;
+            top: 140px;
+            height: fit-content;
           }
           .hero-grid {
             grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);

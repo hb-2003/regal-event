@@ -3,22 +3,28 @@ import getDb from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
-  const db = getDb();
+  const db = await getDb();
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
 
-  const rows =
+  const res =
     category && category !== "all"
-      ? db
-          .prepare(
-            "SELECT * FROM gallery WHERE category = ? ORDER BY sort_order ASC, created_at DESC LIMIT 500"
-          )
-          .all(category)
-      : db
-          .prepare(
-            "SELECT * FROM gallery ORDER BY sort_order ASC, created_at DESC LIMIT 500"
-          )
-          .all();
+      ? await db.execute({
+          sql: "SELECT * FROM gallery WHERE category = ? ORDER BY sort_order ASC, created_at DESC LIMIT 500",
+          args: [category]
+        })
+      : await db.execute({
+          sql: "SELECT * FROM gallery ORDER BY sort_order ASC, created_at DESC LIMIT 500",
+          args: []
+        });
+
+  const rows = res.rows.map(row => {
+    const obj: any = {};
+    for (let i = 0; i < res.columns.length; i++) {
+      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
+    }
+    return obj;
+  });
 
   return NextResponse.json(rows);
 }
@@ -48,9 +54,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid image_path" }, { status: 400 });
   }
 
-  const db = getDb();
-  db.prepare(
-    "INSERT INTO gallery (title, category, image_path, sort_order) VALUES (?, ?, ?, ?)"
-  ).run(title, category, image_path, sort_order);
+  const db = await getDb();
+  await db.execute({
+    sql: "INSERT INTO gallery (title, category, image_path, sort_order) VALUES (?, ?, ?, ?)",
+    args: [title, category, image_path, sort_order]
+  });
   return NextResponse.json({ success: true }, { status: 201 });
 }

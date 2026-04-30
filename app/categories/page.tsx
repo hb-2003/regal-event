@@ -40,11 +40,30 @@ const CATEGORY_ICONS: Record<string,string> = {
   "national-festival":  "✧",
 };
 
+const placeholderCats: Category[] = [
+  { id:0, name:"Luxury Weddings", slug:"weddings", description:"Timeless ceremonies crafted with meticulous precision.", image:null },
+  { id:1, name:"Corporate Galas", slug:"corporate", description:"Sophisticated events that elevate your brand.", image:null },
+  { id:2, name:"Private Dining", slug:"dining", description:"Exclusive dining in London's most distinguished venues.", image:null },
+  { id:3, name:"Product Launches", slug:"launches", description:"Brand experiences that captivate and inspire.", image:null },
+  { id:4, name:"Award Ceremonies", slug:"awards", description:"Prestigious celebrations of achievement.", image:null },
+  { id:5, name:"Intimate Celebrations", slug:"celebrations", description:"Bespoke milestones curated with warmth.", image:null },
+];
+
 export default function CategoriesPage() {
   const [cats, setCats] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/categories").then(r=>r.json()).then(setCats).catch(()=>{});
+    fetch("/api/categories")
+      .then(r=>r.json())
+      .then((data) => {
+        setCats(data && data.length > 0 ? data : placeholderCats);
+        setLoading(false);
+      })
+      .catch(() => {
+        setCats(placeholderCats);
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -81,7 +100,7 @@ export default function CategoriesPage() {
       {/* Grid */}
       <section className="section" style={{ background:"#011F23" }}>
         <div className="container-x" style={{ maxWidth: 1200, marginInline:"auto" }}>
-          {cats.length === 0 ? (
+          {loading ? (
             <div className="grid-1-2-3">
               {[...Array(9)].map((_,i)=>(
                 <div key={i} style={{ height:"clamp(280px, 40vw, 380px)", background:"rgba(1,89,97,.08)", border:"1px solid rgba(252,205,151,.06)" }} />

@@ -48,10 +48,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  const db = getDb();
-  const admin = db
-    .prepare("SELECT * FROM admins WHERE username = ?")
-    .get(username) as Admin | undefined;
+  const db = await getDb();
+  const res = await db.execute({ sql: "SELECT * FROM admins WHERE username = ?", args: [username] });
+  let admin: Admin | undefined;
+  if (res.rows.length > 0) {
+    const row = res.rows[0];
+    const obj: any = {};
+    for (let i = 0; i < res.columns.length; i++) {
+      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
+    }
+    admin = obj as Admin;
+  }
 
   // Always run bcrypt to prevent username-enumeration via timing
   const hashToCheck =
