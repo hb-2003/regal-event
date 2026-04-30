@@ -58,12 +58,27 @@ export default function AboutPage() {
 
   return (
     <>
-      {/* Page Hero */}
-      <div className="page-hero">
-        <div className="page-hero-inner">
+      {/* Page Hero - Cinematic */}
+      <div style={{ position: "relative", minHeight: "85vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0 }}>
+          <Image src="https://images.unsplash.com/photo-1519741347686-c1e0aadf4611?w=2000&q=80" alt="About Regal Event" fill style={{ objectFit: "cover", filter: "brightness(0.35) sepia(0.2) hue-rotate(-20deg)" }} priority />
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #011F23 0%, transparent 60%)" }} />
+        </div>
+        <div className="container-x" style={{ position: "relative", zIndex: 10, textAlign: "center", paddingTop: 80 }}>
           <div className="page-hero-eyebrow">Who We Are</div>
-          <TextReveal as="h1" className="page-hero-title"><span className="gold-shimmer">About Regal Event</span></TextReveal>
-          <p className="page-hero-sub fade-up" style={{ animationDelay: "0.5s", opacity: 0 }}>London&apos;s trusted event decoration and planning specialists</p>
+          <TextReveal as="h1" delay={0.2} style={{
+            fontFamily: "var(--font-cormorant), serif",
+            fontSize: "clamp(3.5rem, 10vw, 8rem)",
+            fontWeight: 300,
+            lineHeight: 0.9,
+            color: "#F9F4EE",
+            marginBottom: "24px"
+          }}>
+            Regal <span className="gold-shimmer">Event</span>
+          </TextReveal>
+          <p className="fade-up" style={{ animationDelay: "0.8s", opacity: 0, color: "rgba(249,244,238,.65)", fontSize: "clamp(1.1rem, 2vw, 1.4rem)", maxWidth: 540, margin: "0 auto" }}>
+            London&apos;s trusted event decoration and planning specialists
+          </p>
         </div>
       </div>
 
@@ -141,19 +156,30 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="section" style={{ background:"#022C32" }}>
+      {/* Why Choose Us - Architectural List */}
+      <section className="section" style={{ background:"#011F23", padding: "clamp(80px, 12vw, 140px) 0" }}>
         <div className="container-x" style={{ maxWidth: 1200, marginInline:"auto" }}>
-          <div style={{ textAlign:"center", marginBottom:"clamp(36px,6vw,60px)" }}>
+          <div style={{ textAlign:"center", marginBottom:"clamp(60px,10vw,100px)" }}>
             <div className="s-label s-label-center reveal">The Regal Difference</div>
             <TextReveal as="h2" className="lux-title" delay={0.1}>Why Choose <em>Us</em></TextReveal>
           </div>
-          <div className="grid-1-2-3">
-            {whyUs.map((item,i)=>(
-              <div key={item.title} className="lux-card reveal" style={{ padding:"clamp(22px,3vw,32px)", transitionDelay:`${i*.08}s` }}>
-                <span style={{ fontSize:"1.5rem", color:"#FCCD97", display:"block", marginBottom:16 }}>{item.icon}</span>
-                <h3 style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.2rem, 2vw, 1.45rem)", fontWeight:500, color:"#F9F4EE", marginBottom:10 }}>{item.title}</h3>
-                <p style={{ fontSize:".85rem", lineHeight:1.7, color:"rgba(249,244,238,.45)" }}>{item.desc}</p>
+
+          <div className="why-us-list">
+            {whyUs.map((item, i) => (
+              <div key={item.title} className="reveal why-us-row" style={{
+                transitionDelay: `${i*0.08}s`
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "clamp(16px, 3vw, 32px)" }}>
+                  <span style={{ fontSize: "1.5rem", color: "#FCCD97" }}>{item.icon}</span>
+                  <h3 style={{ fontFamily: "var(--font-cormorant),serif", fontSize: "clamp(1.5rem, 2.5vw, 2.2rem)", fontWeight: 400, color: "#F9F4EE" }}>
+                    {item.title}
+                  </h3>
+                </div>
+                <div className="why-us-desc">
+                  <p style={{ fontSize: "1.05rem", lineHeight: 1.8, color: "rgba(249,244,238,.55)", maxWidth: 600 }}>
+                    {item.desc}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -195,6 +221,35 @@ export default function AboutPage() {
           </div>
         </div>
       </section>
+
+      <style jsx>{`
+        .why-us-list {
+          display: flex;
+          flex-direction: column;
+        }
+        .why-us-row {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+          padding: clamp(30px, 5vw, 48px) 0;
+          border-top: 1px solid rgba(252,205,151,0.1);
+        }
+        .why-us-row:last-child {
+          border-bottom: 1px solid rgba(252,205,151,0.1);
+        }
+        .why-us-desc {
+          padding-left: 0;
+        }
+        @media (min-width: 768px) {
+          .why-us-row {
+            grid-template-columns: 1fr 1fr;
+            align-items: center;
+          }
+          .why-us-desc {
+            padding-left: 0;
+          }
+        }
+      `}</style>
     </>
   );
 }

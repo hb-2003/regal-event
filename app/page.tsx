@@ -5,6 +5,8 @@ import Link from "next/link";
 import Magnetic from "@/components/Magnetic";
 import TextReveal from "@/components/TextReveal";
 import HeroWebGL from "@/components/HeroWebGL";
+import Manifesto from "@/components/Manifesto";
+import Showreel from "@/components/Showreel";
 
 type Category = { id: number; name: string; slug: string; description: string; image: string | null };
 type GalleryItem = { id: number; image_path: string; title: string };
@@ -200,9 +202,9 @@ export default function HomePage() {
           <HeroWebGL />
         </div>
 
-        <div className="hero-grid container-x">
-          {/* Left content */}
-          <div className="hero-content">
+        <div className="hero-grid container-x" style={{ display: 'block' }}>
+          {/* Main content */}
+          <div className="hero-content" style={{ maxWidth: '800px', paddingTop: '10vh' }}>
             <div className="hero-eyebrow">
               <span />
               London&apos;s Premier Event Atelier
@@ -214,7 +216,7 @@ export default function HomePage() {
               </TextReveal>
             </h1>
 
-            <p className="hero-sub">
+            <p className="hero-sub" style={{ fontSize: '1.1rem', maxWidth: '540px' }}>
               From intimate private dinners to grand galas, Regal Event orchestrates moments of unparalleled distinction across London and beyond.
             </p>
 
@@ -232,28 +234,6 @@ export default function HomePage() {
               </Magnetic>
             </div>
           </div>
-
-          {/* 3D Mosaic — hidden on mobile */}
-          <div className="hero-mosaic-wrap">
-            <div ref={mosaicRef} className="hero-mosaic">
-              {[
-                { style:{ width:"56%", height:"49%", top:0, left:"4%" } },
-                { style:{ width:"41%", height:"38%", top:"5%", right:0, border:"1px solid rgba(252,205,151,.18)" } },
-                { style:{ width:"36%", height:"32%", top:"52%", left:0 } },
-                { style:{ width:"50%", height:"44%", top:"50%", right:"4%" } },
-                { style:{ width:"28%", height:"24%", top:"38%", left:"32%", border:"1px solid rgba(252,205,151,.12)" } },
-              ].map((card, i) => (
-                <div key={i} className="mcard" style={{
-                  position:"absolute", overflow:"hidden", borderRadius:3,
-                  boxShadow:"0 24px 64px rgba(0,0,0,.55)", ...card.style,
-                }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={mosaicImgs[i]} alt="" loading="lazy" style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }} />
-                  <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom,transparent 50%,rgba(1,31,35,.6) 100%)" }} />
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Scroll hint — hidden on mobile */}
@@ -262,6 +242,8 @@ export default function HomePage() {
           <span style={{ fontSize:".6rem", letterSpacing:".22em", textTransform:"uppercase", color:"rgba(249,244,238,.38)", writingMode:"vertical-rl", transform:"rotate(180deg)" }}>Scroll</span>
         </div>
       </section>
+
+      <Manifesto />
 
       {/* ── STATS ────────────────────────────────────────────── */}
       <section style={{ paddingBlock: "clamp(48px, 8vw, 76px)", background:"#022C32", borderTop:"1px solid rgba(252,205,151,.06)", borderBottom:"1px solid rgba(252,205,151,.06)" }}>
@@ -282,6 +264,17 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
+      {/* ── MARQUEE ────────────────────────────────────────── */}
+      <div className="marquee-section">
+        <div className="marquee-track">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="marquee-item">
+              <span className="marquee-dot">✦</span> Bespoke <span className="marquee-dot">✦</span> Unforgettable <span className="marquee-dot">✦</span> London&apos;s Finest <span className="marquee-dot">✦</span> Extraordinary
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ── CATEGORIES ───────────────────────────────────────── */}
       <section className="section" style={{ background:"#011F23" }}>
@@ -313,49 +306,57 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ─────────────────────────────────────── */}
-      <section className="section" style={{ background:"linear-gradient(180deg,#011F23 0%,#022C32 100%)" }}>
-        <div className="container-x" style={{ maxWidth: 1080, marginInline:"auto" }}>
-          <div style={{ textAlign:"center", maxWidth:540, margin:"0 auto clamp(40px,6vw,72px)" }}>
-            <div className="s-label s-label-center reveal">The Regal Process</div>
-            <div className="orn" style={{ justifyContent:"center", margin:"0 auto 18px" }}>
-              <div className="orn-line rev" /><div className="orn-diamond" /><div className="orn-line" />
-            </div>
-            <TextReveal as="h2" className="lux-title" delay={0.1}>From Vision to <em>Reality</em></TextReveal>
-          </div>
+      {/* ── SHOWREEL ─────────────────────────────────────────── */}
+      <Showreel />
 
-          <div id="timeline" className="tl-wrap">
-            <div className="tl-rail" />
-            <div ref={tlProgRef} className="tl-prog" />
-            {steps.map((s, i) => (
-              <div key={i} className="tl-row" style={{ transitionDelay:`${i*.12}s` }}>
-                {s.side === "right" ? (
-                  <>
-                    <div />
-                    <div className="tl-node"><div className="tl-dot" /></div>
-                    <div className="tl-box" style={{ gridColumn:3 }}>
-                      <span style={{ fontFamily:"var(--font-cormorant),serif", fontSize:".78rem", color:"#FCCD97", letterSpacing:".14em", display:"block", marginBottom:7 }}>
-                        {s.num} — {["Discovery","Curation","Orchestration","Experience"][i]}
-                      </span>
-                      <div style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.2rem,2vw,1.45rem)", fontWeight:500, color:"#F9F4EE", marginBottom:10 }}>{s.title}</div>
-                      <p style={{ fontSize:".85rem", color:"rgba(249,244,238,.45)", lineHeight:1.7 }}>{s.desc}</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="tl-box" style={{ gridColumn:1, gridRow:1, textAlign:"right" }}>
-                      <span style={{ fontFamily:"var(--font-cormorant),serif", fontSize:".78rem", color:"#FCCD97", letterSpacing:".14em", display:"block", marginBottom:7 }}>
-                        {s.num} — {["Discovery","Curation","Orchestration","Experience"][i]}
-                      </span>
-                      <div style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.2rem,2vw,1.45rem)", fontWeight:500, color:"#F9F4EE", marginBottom:10 }}>{s.title}</div>
-                      <p style={{ fontSize:".85rem", color:"rgba(249,244,238,.45)", lineHeight:1.7 }}>{s.desc}</p>
-                    </div>
-                    <div className="tl-node"><div className="tl-dot" /></div>
-                    <div />
-                  </>
-                )}
-              </div>
-            ))}
+      {/* ── HOW IT WORKS ─────────────────────────────────────── */}
+      <section className="section" style={{ background:"#011F23", padding: "clamp(80px, 12vw, 140px) 0" }}>
+        <div className="container-x" style={{ maxWidth: 1200, marginInline:"auto" }}>
+          <div className="process-grid">
+
+            {/* Sticky Left Column */}
+            <div className="process-sticky" style={{ position: "sticky", top: "120px", height: "fit-content" }}>
+              <div className="s-label reveal">The Regal Process</div>
+              <TextReveal as="h2" className="lux-title" delay={0.1} style={{ marginBottom: 24 }}>From Vision to<br/><em>Reality</em></TextReveal>
+              <p className="reveal" style={{ fontSize: "1.05rem", color: "rgba(249,244,238,.55)", lineHeight: 1.8, maxWidth: 380, transitionDelay: ".2s" }}>
+                A meticulous four-step journey designed to ensure your event unfolds with effortless grace.
+              </p>
+            </div>
+
+            {/* Scrolling Right Column */}
+            <div id="process-list" style={{ display: "flex", flexDirection: "column", gap: "clamp(60px, 10vw, 100px)", marginTop: "clamp(40px, 0vw, 0px)" }}>
+              {steps.map((s, i) => (
+                <div key={i} className="process-step reveal" style={{ position: "relative", transitionDelay: `${i*0.1}s` }}>
+                  <span style={{
+                    fontFamily: "var(--font-cormorant),serif",
+                    fontSize: "clamp(4rem, 8vw, 6rem)",
+                    fontWeight: 300,
+                    color: "rgba(252,205,151,0.15)",
+                    lineHeight: 0.8,
+                    display: "block",
+                    marginBottom: 24,
+                    transform: "translateX(-4px)"
+                  }}>
+                    {s.num}
+                  </span>
+                  <div style={{ borderTop: "1px solid rgba(252,205,151,0.2)", paddingTop: 32 }}>
+                    <h3 style={{
+                      fontFamily: "var(--font-cormorant),serif",
+                      fontSize: "clamp(1.6rem, 3vw, 2.2rem)",
+                      fontWeight: 400,
+                      color: "#F9F4EE",
+                      marginBottom: 16
+                    }}>
+                      {s.title}
+                    </h3>
+                    <p style={{ fontSize: "1.05rem", color: "rgba(249,244,238,.55)", lineHeight: 1.8, maxWidth: 480 }}>
+                      {s.desc}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
       </section>
@@ -388,49 +389,25 @@ export default function HomePage() {
 
       {/* ── TESTIMONIALS ─────────────────────────────────────── */}
       <section className="section" style={{ background:"#022C32" }}>
-        <div className="container-x" style={{ maxWidth: 1080, marginInline:"auto" }}>
-          <div style={{ textAlign:"center", marginBottom:"clamp(36px,6vw,64px)" }}>
+        <div className="container-x" style={{ maxWidth: 1200, marginInline:"auto" }}>
+          <div style={{ textAlign:"center", marginBottom:"clamp(60px,10vw,100px)" }}>
             <div className="s-label s-label-center reveal">Client Stories</div>
-            <div className="orn" style={{ justifyContent:"center", margin:"0 auto 18px" }}>
-              <div className="orn-line rev" /><div className="orn-diamond" /><div className="orn-line" />
-            </div>
             <TextReveal as="h2" className="lux-title" delay={0.1}>Words of <em>Distinction</em></TextReveal>
-            <p className="testimonial-hint" style={{ color:"rgba(249,244,238,.38)", fontSize:".8rem", marginTop:10 }}>
-              {isTouchDevice ? "Tap each card to reveal the full story" : "Hover each card to reveal the full story"}
-            </p>
           </div>
-          <div className="grid-1-2-3">
+          <div className="grid-1-2-3" style={{ gap: "clamp(40px, 6vw, 80px)" }}>
             {testimonials.map((t, i) => (
               <div
                 key={i}
-                className={`flip-wrap reveal ${flipped === i ? "flipped" : ""}`}
-                tabIndex={0}
-                style={{ transitionDelay:`${i*.15}s` }}
-                onClick={() => {
-                  if (isTouchDevice) setFlipped(flipped === i ? null : i);
-                }}
+                className="reveal"
+                style={{ transitionDelay:`${i*.15}s`, display: "flex", flexDirection: "column" }}
               >
-                <div className="flip-inner">
-                  <div className="flip-face">
-                    <div style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"2.4rem", color:"#FCCD97", opacity:.38, lineHeight:1, marginBottom:14 }}>&ldquo;</div>
-                    <p style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(.95rem,1.5vw,1.08rem)", fontWeight:300, fontStyle:"italic", color:"#F9F4EE", lineHeight:1.72, flex:1 }}>{t.text}</p>
-                    <div style={{ display:"flex", alignItems:"center", gap:12, marginTop:22 }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`https://i.pravatar.cc/100?img=${i*2+1}`} alt="" loading="lazy" style={{ width:42, height:42, borderRadius:"50%", objectFit:"cover", border:"1px solid rgba(252,205,151,.18)" }} />
-                      <div>
-                        <span style={{ fontSize:".83rem", fontWeight:500, color:"#F9F4EE", display:"block" }}>{t.name}</span>
-                        <span style={{ fontSize:".7rem", color:"rgba(249,244,238,.4)", display:"block" }}>{t.location}</span>
-                      </div>
-                    </div>
-                    <div style={{ fontSize:".65rem", letterSpacing:".14em", textTransform:"uppercase", color:"#FCCD97", textAlign:"right", marginTop:14 }}>
-                      {isTouchDevice ? "Tap to reveal →" : "Hover to reveal →"}
-                    </div>
-                  </div>
-                  <div className="flip-back">
-                    <span style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"1.05rem", color:"#FCCD97", display:"block", marginBottom:12 }}>♢ {t.event}</span>
-                    <p style={{ fontSize:".83rem", color:"rgba(249,244,238,.7)", lineHeight:1.72 }}>{t.detail}</p>
-                    <span style={{ color:"#FCCD97", fontSize:".95rem", letterSpacing:".08em", display:"block", marginTop:18 }}>{"★".repeat(t.rating)}</span>
-                  </div>
+                <div style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(3.5rem, 6vw, 5rem)", color:"#FCCD97", opacity: 0.2, lineHeight:0.5, marginBottom: 24 }}>&ldquo;</div>
+                <p style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.1rem,1.8vw,1.3rem)", fontWeight:300, fontStyle:"italic", color:"#F9F4EE", lineHeight:1.7, flex:1, paddingLeft: 12, borderLeft: "1px solid rgba(252,205,151,0.15)" }}>
+                  {t.text}
+                </p>
+                <div style={{ paddingLeft: 12, marginTop: 32 }}>
+                  <span style={{ fontSize:".9rem", fontWeight:500, letterSpacing: ".1em", color:"#F9F4EE", display:"block", marginBottom: 6, textTransform: "uppercase" }}>{t.name}</span>
+                  <span style={{ fontSize:".75rem", color:"rgba(249,244,238,.4)", display:"block", letterSpacing: ".05em" }}>{t.event} &nbsp;·&nbsp; {t.location}</span>
                 </div>
               </div>
             ))}
@@ -543,6 +520,12 @@ export default function HomePage() {
         .hero-scroll-hint { display: none; }
 
         @media (min-width: 1024px) {
+          .process-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: start;
+          }
           .hero-grid {
             grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
             gap: 56px;
