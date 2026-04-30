@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, ReactElement, cloneElement } from "react";
+import { useEffect, useRef, ReactElement } from "react";
 import { gsap } from "gsap";
 
 interface MagneticProps {
@@ -9,7 +9,7 @@ interface MagneticProps {
 }
 
 export default function Magnetic({ children, intensity = 0.5 }: MagneticProps) {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = ref.current;
@@ -46,6 +46,9 @@ export default function Magnetic({ children, intensity = 0.5 }: MagneticProps) {
     };
   }, [intensity]);
 
-  // Merge the ref onto the child element
-  return cloneElement(children, { ref } as any);
+  return (
+    <div ref={ref} style={{ display: "inline-block" }}>
+      {children}
+    </div>
+  );
 }

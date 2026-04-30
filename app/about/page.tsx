@@ -116,7 +116,7 @@ export default function AboutPage() {
                   <path id="textPath" d="M 100, 100 m -80, 0 a 80,80 0 1,1 160,0 a 80,80 0 1,1 -160,0" fill="none" />
                   <text fill="#FCCD97" fontSize="11" fontWeight="500" letterSpacing="0.25em" style={{ textTransform: "uppercase", fontFamily: "var(--font-jost), sans-serif" }}>
                     <textPath href="#textPath" startOffset="0%">
-                      London's Premier Event Atelier • Excellence in Every Detail •
+                      London&apos;s Premier Event Atelier • Excellence in Every Detail •
                     </textPath>
                   </text>
                 </svg>

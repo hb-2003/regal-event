@@ -7,7 +7,7 @@ import SplitType from "split-type";
 
 interface TextRevealProps {
   children: React.ReactNode;
-  as?: keyof React.JSX.IntrinsicElements;
+  as?: "div" | "p" | "h1" | "h2" | "h3" | "span";
   className?: string;
   style?: React.CSSProperties;
   delay?: number;
@@ -20,10 +20,11 @@ export default function TextReveal({
   style = {},
   delay = 0,
 }: TextRevealProps) {
-  const textRef = useRef<HTMLElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!textRef.current) return;
+    const triggerEl = textRef.current.parentElement ?? textRef.current;
 
     // Register ScrollTrigger
     gsap.registerPlugin(ScrollTrigger);
@@ -35,7 +36,7 @@ export default function TextReveal({
     const ctx = gsap.context(() => {
       gsap.from(split.chars, {
         scrollTrigger: {
-          trigger: textRef.current,
+          trigger: triggerEl,
           start: "top 85%", // Start animation when top of element hits 85% of viewport
         },
         y: "100%",
@@ -50,7 +51,7 @@ export default function TextReveal({
 
     // Re-split on window resize
     const handleResize = () => {
-      split.split();
+      split.split({ types: "lines,words,chars" });
     };
     window.addEventListener("resize", handleResize);
 
@@ -61,9 +62,29 @@ export default function TextReveal({
     };
   }, [delay]);
 
-  return (
-    <Tag ref={textRef} className={className} style={{ ...style, clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)" }}>
+  const content = (
+    <span ref={textRef} style={{ display: "inline-block" }}>
       {children}
-    </Tag>
+    </span>
   );
+  const sharedProps = {
+    className,
+    style: { ...style, clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)" },
+  };
+
+  switch (Tag) {
+    case "h1":
+      return <h1 {...sharedProps}>{content}</h1>;
+    case "h2":
+      return <h2 {...sharedProps}>{content}</h2>;
+    case "h3":
+      return <h3 {...sharedProps}>{content}</h3>;
+    case "p":
+      return <p {...sharedProps}>{content}</p>;
+    case "span":
+      return <span {...sharedProps}>{content}</span>;
+    case "div":
+    default:
+      return <div {...sharedProps}>{content}</div>;
+  }
 }

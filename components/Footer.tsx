@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
 
 const quickLinks = [["Home","/"],["About","/about"],["Services","/categories"],["Gallery","/gallery"],["Videos","/videos"],["Contact","/contact"]];
 const services = ["Birthday Decoration","Baby Shower","Engagement","Haldi Ceremony","Corporate Event","Anniversary"];

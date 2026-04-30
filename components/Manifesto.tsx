@@ -39,7 +39,7 @@ export default function Manifesto() {
       });
     }, containerRef);
 
-    const handleResize = () => split.split();
+    const handleResize = () => split.split({ types: "words" });
     window.addEventListener("resize", handleResize);
 
     return () => {

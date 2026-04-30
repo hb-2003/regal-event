@@ -4,6 +4,7 @@ import { useRef, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import type { ThreeEvent } from "@react-three/fiber";
 
 // Custom GLSL Shader for Liquid Image Distortion
 const vertexShader = `
@@ -49,7 +50,6 @@ const fragmentShader = `
 `;
 
 function LiquidPlane() {
-  const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.ShaderMaterial>(null);
   const texture = useTexture("https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=80");
 
@@ -73,17 +73,17 @@ function LiquidPlane() {
 
   // Update loop
   useFrame((state) => {
-    if (materialRef.current) {
-      materialRef.current.uniforms.uTime.value = state.clock.getElapsedTime();
+    const material = materialRef.current;
+    if (!material) return;
 
-      // Smoothly interpolate mouse position and hover state
-      uniforms.uMouse.value.lerp(targetMouse.current, 0.05);
-      uniforms.uHover.value += (targetHover.current - uniforms.uHover.value) * 0.05;
-    }
+    material.uniforms.uTime.value = state.clock.getElapsedTime();
+    (material.uniforms.uMouse.value as THREE.Vector2).lerp(targetMouse.current, 0.05);
+    material.uniforms.uHover.value += (targetHover.current - material.uniforms.uHover.value) * 0.05;
   });
 
   // Event handlers
-  const handlePointerMove = (e: any) => {
+  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+    if (!e.uv) return;
     targetMouse.current.set(e.uv.x, e.uv.y);
   };
 
@@ -98,7 +98,6 @@ function LiquidPlane() {
 
   return (
     <mesh
-      ref={meshRef}
       onPointerMove={handlePointerMove}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}

@@ -33,20 +33,10 @@ const placeholderCats = [
   { id:5, name:"Intimate Celebrations", slug:"celebrations", description:"Bespoke milestones curated with warmth.", image:null },
 ];
 
-const mosaicImgs = [
-  "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&q=80",
-  "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80",
-  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80",
-  "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80",
-  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&q=80",
-];
-
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
-  const [flipped, setFlipped] = useState<number | null>(null);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   const heroRef = useRef<HTMLElement>(null);
   const mosaicRef = useRef<HTMLDivElement>(null);
@@ -59,14 +49,6 @@ export default function HomePage() {
   useEffect(() => {
     fetch("/api/categories").then(r=>r.json()).then(d=>setCategories(d.slice(0,6))).catch(()=>{});
     fetch("/api/gallery").then(r=>r.json()).then(d=>setGallery(d.slice(0,9))).catch(()=>{});
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: none)");
-    const onChange = () => setIsTouchDevice(mq.matches);
-    onChange();
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
   }, []);
 
   // Mosaic mousemove — only for non-touch, non-small viewports
