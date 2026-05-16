@@ -42,6 +42,12 @@ async function seed() {
       { name: "Surprise Planning", slug: "surprise-planning", description: "Secret surprise events planned and executed to perfection." },
       { name: "Anniversary", slug: "anniversary", description: "Romantic anniversary celebrations for every milestone." },
       { name: "National Festival", slug: "national-festival", description: "Vibrant festive celebrations for national occasions and holidays." },
+      {
+        name: "Gallery Booking",
+        slug: "gallery-booking",
+        description:
+          "Book a specific event setup from our gallery — décor packages with listed pricing.",
+      },
     ];
 
     for (let i = 0; i < categories.length; i++) {
@@ -69,6 +75,22 @@ async function seed() {
     }
     if (backfilled > 0) {
       console.log(`Backfilled images for ${backfilled} categories`);
+    }
+
+    const galleryBooking = await categoryRepo.findOneBy({ slug: "gallery-booking" });
+    if (!galleryBooking) {
+      const maxOrder = existing.reduce((m, c) => Math.max(m, c.sort_order), 0);
+      await categoryRepo.save(
+        categoryRepo.create({
+          name: "Gallery Booking",
+          slug: "gallery-booking",
+          description:
+            "Book a specific event setup from our gallery — décor packages with listed pricing.",
+          image: DEFAULT_CATEGORY_IMAGES["theme-decoration"] ?? null,
+          sort_order: maxOrder + 1,
+        })
+      );
+      console.log("Seeded Gallery Booking category");
     }
   }
 

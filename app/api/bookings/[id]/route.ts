@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRepository } from "@/lib/db";
 import { Booking } from "@/server/database/entities/Booking.entity";
+import { Gallery } from "@/server/database/entities/Gallery.entity";
 import { sendBookingStatusChangeEmail } from "@/lib/email";
 import { ensureReviewInviteForBooking } from "@/lib/review-service";
 import { requireAdmin } from "@/lib/auth";
@@ -35,7 +36,19 @@ export async function GET(
   const { phone: _phone, email: _email, ...publicView } = booking;
   void _phone;
   void _email;
-  return NextResponse.json(publicView);
+
+  let package_title: string | null = null;
+  if (booking.gallery_id) {
+    const galleryRepo = await getRepository(Gallery);
+    const pkg = await galleryRepo.findOneBy({ id: booking.gallery_id });
+    package_title = pkg?.title ?? null;
+  }
+
+  return NextResponse.json({
+    ...publicView,
+    package_title,
+    estimated_total: booking.budget,
+  });
 }
 
 export async function PATCH(

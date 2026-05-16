@@ -101,7 +101,7 @@ function bookingDetailsTable(booking: {
       <tr style="background:#F9F4EE;"><td style="padding:12px 16px;color:#666;font-size:13px;">Date</td><td style="padding:12px 16px;color:#012D32;font-weight:600;">${esc(dateLabel)}</td></tr>
       ${booking.venue ? `<tr><td style="padding:12px 16px;color:#666;font-size:13px;">Venue</td><td style="padding:12px 16px;color:#222;">${esc(booking.venue)}</td></tr>` : ""}
       ${booking.guests ? `<tr style="background:#F9F4EE;"><td style="padding:12px 16px;color:#666;font-size:13px;">Guests</td><td style="padding:12px 16px;color:#222;">${esc(booking.guests)}</td></tr>` : ""}
-      ${estimate ? `<tr><td style="padding:12px 16px;color:#666;font-size:13px;">Estimated budget</td><td style="padding:12px 16px;color:#222;">${esc(estimate)}</td></tr>` : ""}
+      ${estimate ? `<tr><td style="padding:12px 16px;color:#666;font-size:13px;">Estimated total</td><td style="padding:12px 16px;color:#222;">${esc(estimate)}</td></tr>` : ""}
       ${confirmed ? `<tr style="background:#F9F4EE;"><td style="padding:12px 16px;color:#666;font-size:13px;">Confirmed amount</td><td style="padding:12px 16px;color:#015961;font-weight:700;">${esc(confirmed)}</td></tr>` : ""}
     </table>`;
 }
@@ -160,8 +160,9 @@ export async function sendBookingConfirmationToClient(booking: {
           <tr style="background:#EDE5D8;"><td style="padding:10px 8px;color:#666;font-size:13px;">Category</td><td style="padding:10px 8px;color:#222;font-weight:600;">${esc(booking.category)}</td></tr>
           ${booking.venue ? `<tr><td style="padding:10px 8px;color:#666;font-size:13px;">Venue</td><td style="padding:10px 8px;color:#222;">${esc(booking.venue)}</td></tr>` : ""}
           ${booking.guests ? `<tr style="background:#EDE5D8;"><td style="padding:10px 8px;color:#666;font-size:13px;">Guests</td><td style="padding:10px 8px;color:#222;">${esc(booking.guests)}</td></tr>` : ""}
-          ${booking.budget ? `<tr><td style="padding:10px 8px;color:#666;font-size:13px;">Budget</td><td style="padding:10px 8px;color:#222;">${esc(booking.budget)}</td></tr>` : ""}
+          ${booking.budget ? `<tr><td style="padding:10px 8px;color:#666;font-size:13px;">Estimated total</td><td style="padding:10px 8px;color:#222;">${esc(booking.budget)}</td></tr>` : ""}
         </table>
+        <p style="color:#666;font-size:13px;line-height:1.6;margin-top:16px;">Your request is <strong>pending review</strong>. We will confirm details and pricing with you shortly.</p>
         <a href="${esc(trackUrl)}" style="display:inline-block;background:#015961;color:#FCCD97;padding:14px 28px;border-radius:4px;text-decoration:none;font-weight:bold;margin-top:8px;letter-spacing:1px;">Track Your Booking →</a>
       </div>
       ${footerHtml}

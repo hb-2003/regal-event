@@ -216,7 +216,12 @@ export default function AdminCategoriesPage() {
                     <Image src={imagePreview} alt="Preview" fill className="object-cover" />
                   </div>
                 )}
-                <input type="file" accept="image/*" onChange={handleFileChange} className="w-full text-sm" style={{ color: "#555" }} />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="block w-full rounded-lg border border-[#EDE5D8] bg-[#F9F4EE] px-3 py-3 text-sm text-[#333] file:mr-4 file:rounded-lg file:border-0 file:bg-[#015961] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#FCCD97] hover:file:bg-[#012D32] cursor-pointer"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: "#555" }}>

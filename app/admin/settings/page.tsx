@@ -23,7 +23,7 @@ const sectionStyle = {
 } as const;
 
 const fileInputClass =
-  "block w-full text-sm text-[#555] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#EDE5D8] file:text-[#015961] hover:file:bg-[#FCCD97]/40 cursor-pointer";
+  "block w-full rounded-lg border border-[#EDE5D8] bg-[#F9F4EE] px-3 py-3 text-sm text-[#333] file:mr-4 file:rounded-lg file:border-0 file:bg-[#015961] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#FCCD97] hover:file:bg-[#012D32] cursor-pointer";
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);

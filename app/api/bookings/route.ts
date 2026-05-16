@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRepository } from "@/lib/db";
 import { Booking } from "@/server/database/entities/Booking.entity";
 import { generateBookingId, requireAdmin } from "@/lib/auth";
+import { resolvePackageBooking } from "@/lib/booking-package";
 import {
   isEmailConfigured,
   sendBookingAlertToAdmin,
@@ -133,23 +134,74 @@ export async function POST(request: NextRequest) {
   const phone = String(body.phone ?? "").trim().slice(0, 40);
   const email = String(body.email ?? "").trim().toLowerCase().slice(0, 200);
   const event_date = String(body.event_date ?? "").trim().slice(0, 20);
-  const category = String(body.category ?? "").trim().slice(0, 80);
+  let category = String(body.category ?? "").trim().slice(0, 80);
   const venue = body.venue ? String(body.venue).trim().slice(0, 200) : null;
-  const guests =
+  let guests =
     body.guests != null && body.guests !== ""
       ? Math.max(1, Math.min(100000, Math.floor(Number(body.guests))))
       : null;
-  const budget = body.budget ? String(body.budget).trim().slice(0, 80) : null;
+  let budget = body.budget ? String(body.budget).trim().slice(0, 80) : null;
   let final_amount = body.final_amount
     ? String(body.final_amount).trim().slice(0, 80)
     : null;
   const notes = body.notes ? String(body.notes).trim().slice(0, 2000) : null;
-  const admin_notes = body.admin_notes
+  let admin_notes = body.admin_notes
     ? String(body.admin_notes).trim().slice(0, 2000)
     : null;
+  let gallery_id =
+    body.gallery_id != null && body.gallery_id !== ""
+      ? Math.floor(Number(body.gallery_id))
+      : null;
+
+  const isPublicSubmit = body.source === "public";
+
+  if (!full_name || !phone || !email || !event_date) {
+    return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
+  }
+  if (!EMAIL_RE.test(email)) {
+    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
+  }
+  const date = new Date(event_date);
+  if (Number.isNaN(date.getTime())) {
+    return NextResponse.json({ error: "Invalid event date" }, { status: 400 });
+  }
+  if (Number.isNaN(Number(guests)) && body.guests !== undefined && body.guests !== "") {
+    return NextResponse.json({ error: "Invalid guest count" }, { status: 400 });
+  }
+
+  if (gallery_id && gallery_id > 0) {
+    const resolved = await resolvePackageBooking(
+      gallery_id,
+      event_date,
+      guests,
+      isAdmin && !isPublicSubmit
+    );
+    if (!resolved.ok) {
+      return NextResponse.json({ error: resolved.error }, { status: 400 });
+    }
+    category = resolved.data.category;
+    budget = resolved.data.budget;
+    guests = resolved.data.guests;
+    if (isAdmin && !isPublicSubmit && resolved.data.quoteAdminNote) {
+      admin_notes = admin_notes
+        ? `${resolved.data.quoteAdminNote}\n\n---\n${admin_notes}`
+        : resolved.data.quoteAdminNote;
+    }
+  }
 
   let status: string;
-  if (isAdmin) {
+  if (isPublicSubmit || !isAdmin) {
+    if (
+      !isPublicSubmit &&
+      body.status !== undefined &&
+      body.status !== null &&
+      body.status !== ""
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+    status = "Pending";
+    final_amount = null;
+  } else {
     const s =
       body.status !== undefined && body.status !== null && body.status !== ""
         ? String(body.status).trim()
@@ -173,28 +225,13 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-  } else {
-    if (body.status !== undefined && body.status !== null && body.status !== "") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-    status = "Pending";
-    final_amount = null;
   }
 
-  const sendEmails = isAdmin ? body.send_emails !== false : true;
+  const sendEmails =
+    isPublicSubmit || !isAdmin ? true : body.send_emails !== false;
 
-  if (!full_name || !phone || !email || !event_date || !category) {
+  if (!category) {
     return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
-  }
-  if (!EMAIL_RE.test(email)) {
-    return NextResponse.json({ error: "Invalid email" }, { status: 400 });
-  }
-  const date = new Date(event_date);
-  if (Number.isNaN(date.getTime())) {
-    return NextResponse.json({ error: "Invalid event date" }, { status: 400 });
-  }
-  if (Number.isNaN(Number(guests)) && body.guests !== undefined && body.guests !== "") {
-    return NextResponse.json({ error: "Invalid guest count" }, { status: 400 });
   }
 
   const booking_id = generateBookingId();
@@ -207,6 +244,7 @@ export async function POST(request: NextRequest) {
       email,
       event_date,
       category,
+      gallery_id: gallery_id && gallery_id > 0 ? gallery_id : null,
       venue,
       guests,
       budget,

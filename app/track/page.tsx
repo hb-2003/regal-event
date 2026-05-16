@@ -3,7 +3,24 @@ import { useState, Suspense, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
-type Booking = { booking_id:string; full_name:string; phone?:string; email?:string; event_date:string; category:string; venue:string; guests:number; budget:string; final_amount?:string; notes:string; status:string; admin_notes:string; created_at:string };
+type Booking = {
+  booking_id: string;
+  full_name: string;
+  phone?: string;
+  email?: string;
+  event_date: string;
+  category: string;
+  venue: string;
+  guests: number;
+  budget: string;
+  final_amount?: string;
+  notes: string;
+  status: string;
+  admin_notes: string;
+  created_at: string;
+  package_title?: string | null;
+  estimated_total?: string | null;
+};
 
 const statusSteps = ["Pending","Confirmed","Completed"];
 const statusCfg: Record<string,{color:string;label:string;desc:string}> = {
@@ -110,14 +127,22 @@ function TrackForm() {
               <p style={{ fontSize:".65rem", letterSpacing:".2em", textTransform:"uppercase", color:"rgba(249,244,238,.35)", marginBottom:16 }}>Event Details</p>
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:10 }}>
                 {[
-                  ["Client Name",booking.full_name],["Event Category",booking.category],
-                  ["Event Date",booking.event_date],["Venue",booking.venue||"—"],
-                  ["Guests",booking.guests?String(booking.guests):"—"],
-                  ["Estimated budget",booking.budget||"—"],
+                  ["Client Name", booking.full_name],
+                  ...(booking.package_title
+                    ? [["Package", booking.package_title] as [string, string]]
+                    : []),
+                  ["Event Category", booking.category],
+                  ["Event Date", booking.event_date],
+                  ["Venue", booking.venue || "—"],
+                  ["Guests", booking.guests ? String(booking.guests) : "—"],
+                  [
+                    booking.package_title ? "Estimated total" : "Estimated budget",
+                    booking.estimated_total || booking.budget || "—",
+                  ],
                   ...(booking.final_amount
                     ? [["Confirmed amount", booking.final_amount] as [string, string]]
                     : []),
-                ].map(([label,value])=>(
+                ].map(([label, value]) => (
                   <div key={label} style={{ padding:12, background:"rgba(1,89,97,.08)", border:"1px solid rgba(252,205,151,.07)" }}>
                     <p style={{ fontSize:".65rem", color:"rgba(249,244,238,.35)", marginBottom:4, letterSpacing:".1em", textTransform:"uppercase" }}>{label}</p>
                     <p style={{ fontSize:".88rem", color:"#F9F4EE", fontWeight:400, wordBreak:"break-word" }}>{value}</p>

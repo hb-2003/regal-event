@@ -8,9 +8,10 @@ import { useEffect, useState } from "react";
 const links = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "◈" },
   { href: "/admin/bookings", label: "Bookings", icon: "♢" },
+  { href: "/admin/calendar", label: "Calendar", icon: "▦" },
   { href: "/admin/reviews", label: "Reviews", icon: "❝" },
   { href: "/admin/categories", label: "Categories", icon: "✦" },
-  { href: "/admin/gallery", label: "Gallery", icon: "◇" },
+  { href: "/admin/gallery", label: "Gallery packages", icon: "◇" },
   { href: "/admin/videos", label: "Videos", icon: "▶" },
   { href: "/admin/settings", label: "Settings", icon: "⬡" },
 ];

@@ -29,6 +29,10 @@ export class Booking {
   @Column()
   category!: string;
 
+  /** Selected bookable gallery package, if booked from gallery */
+  @Column({ name: "gallery_id", type: "int", nullable: true })
+  gallery_id!: number | null;
+
   @Column({ type: "text", nullable: true })
   venue!: string | null;
 

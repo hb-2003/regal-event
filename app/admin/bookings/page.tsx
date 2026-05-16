@@ -1,6 +1,10 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import PackageBookingSummary, { usePackageQuote } from "@/components/PackageBookingSummary";
+import Select from "@/components/ui/Select";
+import { calculatePackageQuote } from "@/lib/gallery-pricing";
+import type { GalleryPackageDto } from "@/lib/gallery";
 
 type Booking = {
   id: number;
@@ -38,6 +42,7 @@ const emptyCreateForm = () => ({
   phone: "",
   email: "",
   event_date: "",
+  gallery_package_id: "",
   category: "",
   venue: "",
   guests: "",
@@ -70,6 +75,15 @@ export default function AdminBookingsPage() {
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [galleryPackages, setGalleryPackages] = useState<GalleryPackageDto[]>([]);
+
+  const selectedPackage = useMemo(() => {
+    if (!createForm.gallery_package_id) return null;
+    const id = Number(createForm.gallery_package_id);
+    return galleryPackages.find((p) => p.id === id) ?? null;
+  }, [createForm.gallery_package_id, galleryPackages]);
+
+  const packageQuote = usePackageQuote(selectedPackage, createForm.guests);
 
   useEffect(() => setMounted(true), []);
 
@@ -84,9 +98,10 @@ export default function AdminBookingsPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [bookingsRes, categoriesRes] = await Promise.all([
+      const [bookingsRes, categoriesRes, galleryRes] = await Promise.all([
         fetch("/api/bookings"),
         fetch("/api/categories"),
+        fetch("/api/gallery"),
       ]);
       if (cancelled) return;
       const bookingsData = bookingsRes.ok ? await bookingsRes.json() : [];
@@ -94,6 +109,10 @@ export default function AdminBookingsPage() {
       if (categoriesRes.ok) {
         const cats = await categoriesRes.json();
         if (Array.isArray(cats)) setCategories(cats);
+      }
+      if (galleryRes.ok) {
+        const pkgs = await galleryRes.json();
+        if (Array.isArray(pkgs)) setGalleryPackages(pkgs);
       }
       setLoading(false);
     })();
@@ -134,16 +153,72 @@ export default function AdminBookingsPage() {
     setCreateForm((f) => ({ ...f, [key]: value }));
   }
 
+  function applyGalleryPackage(pkgId: string) {
+    if (!pkgId) {
+      setCreateForm((f) => ({ ...f, gallery_package_id: "", quoted_price: "" }));
+      return;
+    }
+    const pkg = galleryPackages.find((p) => p.id === Number(pkgId));
+    if (!pkg) {
+      setCreateField("gallery_package_id", pkgId);
+      return;
+    }
+    const defaultGuests =
+      pkg.base_guest_capacity != null
+        ? String(pkg.base_guest_capacity)
+        : pkg.require_guest_count || pkg.guest_pricing_enabled
+          ? "100"
+          : "";
+    const guests = defaultGuests;
+    const quote = calculatePackageQuote(
+      pkg,
+      guests ? Number(guests) : null
+    );
+    setCreateForm((f) => ({
+      ...f,
+      gallery_package_id: pkgId,
+      category: pkg.category || f.category,
+      guests,
+      quoted_price: "error" in quote ? "" : quote.formattedTotal,
+    }));
+  }
+
+  useEffect(() => {
+    if (!selectedPackage || !packageQuote) return;
+    setCreateForm((f) => {
+      if (f.quoted_price === packageQuote.formattedTotal) return f;
+      return { ...f, quoted_price: packageQuote.formattedTotal };
+    });
+  }, [selectedPackage, packageQuote]);
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     setCreateError("");
-    if (createForm.status === "Confirmed" && !createForm.quoted_price.trim()) {
+    const hasPackage = Boolean(createForm.gallery_package_id);
+    if (
+      createForm.status === "Confirmed" &&
+      !createForm.quoted_price.trim() &&
+      !hasPackage
+    ) {
       setCreateError("Enter the agreed price for a confirmed booking.");
       return;
+    }
+    if (hasPackage && selectedPackage) {
+      const quoteCheck = calculatePackageQuote(
+        selectedPackage,
+        createForm.guests ? Number(createForm.guests) : null
+      );
+      if ("error" in quoteCheck) {
+        setCreateError(quoteCheck.error);
+        return;
+      }
     }
     setCreating(true);
     try {
       const price = createForm.quoted_price.trim();
+      const galleryId = createForm.gallery_package_id
+        ? Number(createForm.gallery_package_id)
+        : undefined;
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,10 +227,11 @@ export default function AdminBookingsPage() {
           phone: createForm.phone,
           email: createForm.email,
           event_date: createForm.event_date,
+          gallery_id: galleryId,
           category: createForm.category,
           venue: createForm.venue || undefined,
           guests: createForm.guests ? Number(createForm.guests) : undefined,
-          budget: price || undefined,
+          budget: galleryId ? undefined : price || undefined,
           final_amount:
             createForm.status === "Confirmed" && price ? price : undefined,
           notes: createForm.notes || undefined,
@@ -435,31 +511,24 @@ export default function AdminBookingsPage() {
               )}
 
               {/* Status update */}
-              <div>
-                <label className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: "#555" }}>
-                  Update Status
-                </label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => {
-                    const next = e.target.value;
-                    setEditStatus(next);
-                    if (
-                      next === "Confirmed" &&
-                      !editFinalAmount.trim() &&
-                      selected?.budget
-                    ) {
-                      setEditFinalAmount(selected.budget);
-                    }
-                  }}
-                  className="w-full px-4 py-3 rounded-lg text-sm"
-                  style={{ border: "1px solid #EDE5D8", color: "#222" }}
-                >
-                  {["Pending", "Confirmed", "Completed", "Cancelled"].map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="Update status"
+                value={editStatus}
+                onChange={(next) => {
+                  setEditStatus(next);
+                  if (
+                    next === "Confirmed" &&
+                    !editFinalAmount.trim() &&
+                    selected?.budget
+                  ) {
+                    setEditFinalAmount(selected.budget);
+                  }
+                }}
+                options={["Pending", "Confirmed", "Completed", "Cancelled"].map((s) => ({
+                  value: s,
+                  label: s,
+                }))}
+              />
 
               <div>
                 <label className="block text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: "#555" }}>
@@ -610,24 +679,42 @@ export default function AdminBookingsPage() {
                     style={inputStyle}
                   />
                 </div>
+                <div className="sm:col-span-2">
+                  <Select
+                    label="Gallery package (optional)"
+                    value={createForm.gallery_package_id}
+                    onChange={applyGalleryPackage}
+                    placeholder="None — direct booking"
+                    options={[
+                      { value: "", label: "None — direct booking" },
+                      ...galleryPackages.map((p) => ({
+                        value: String(p.id),
+                        label: p.title || `Package #${p.id}`,
+                      })),
+                    ]}
+                  />
+                </div>
+                {selectedPackage && (
+                  <div className="sm:col-span-2">
+                    <PackageBookingSummary
+                      pkg={selectedPackage}
+                      guestCount={createForm.guests}
+                      variant="admin"
+                    />
+                  </div>
+                )}
                 <div>
-                  <label className={labelClass} style={labelStyle}>
-                    Category <span style={{ color: "#c1121f" }}>*</span>
-                  </label>
-                  <select
+                  <Select
+                    label="Category"
                     required
                     value={createForm.category}
-                    onChange={(e) => setCreateField("category", e.target.value)}
-                    className={inputClass}
-                    style={inputStyle}
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setCreateField("category", v)}
+                    placeholder="Select category"
+                    options={[
+                      { value: "", label: "Select category" },
+                      ...categories.map((c) => ({ value: c.name, label: c.name })),
+                    ]}
+                  />
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelClass} style={labelStyle}>
@@ -656,24 +743,13 @@ export default function AdminBookingsPage() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelClass} style={labelStyle}>
-                    Initial status
-                  </label>
-                  <select
+                  <Select
+                    label="Initial status"
                     value={createForm.status}
-                    onChange={(e) => setCreateField("status", e.target.value)}
-                    className={inputClass}
-                    style={inputStyle}
-                  >
-                    {createStatusOptions.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-[11px] mt-1.5" style={{ color: "#888" }}>
-                    Use Confirmed for booked events. Set Completed later from the bookings list.
-                  </p>
+                    onChange={(v) => setCreateField("status", v)}
+                    options={createStatusOptions.map((s) => ({ value: s, label: s }))}
+                    hint="Use Confirmed for booked events. Set Completed later from the bookings list."
+                  />
                 </div>
                 <div className="flex items-end">
                   <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: "#444" }}>
@@ -706,8 +782,8 @@ export default function AdminBookingsPage() {
                 style={{ backgroundColor: "#F9F4EE", border: "1px solid #EDE5D8" }}
               >
                   <label className={labelClass} style={labelStyle}>
-                    Agreed price (£)
-                    {createForm.status === "Confirmed" && (
+                    {selectedPackage ? "Estimated total (£)" : "Agreed price (£)"}
+                    {createForm.status === "Confirmed" && !selectedPackage && (
                       <span style={{ color: "#c1121f" }}> *</span>
                     )}
                   </label>
@@ -718,10 +794,13 @@ export default function AdminBookingsPage() {
                     className={inputClass}
                     style={inputStyle}
                     placeholder="e.g. £2,500"
-                    required={createForm.status === "Confirmed"}
+                    required={createForm.status === "Confirmed" && !selectedPackage}
+                    readOnly={Boolean(selectedPackage && packageQuote)}
                   />
                   <p className="text-[11px] mt-1.5" style={{ color: "#888" }}>
-                    Direct price (not a budget range). Required when status is Confirmed.
+                    {selectedPackage
+                      ? "Calculated from package and guest count. Server validates on save."
+                      : "Direct price (not a budget range). Required when status is Confirmed."}
                   </p>
                 </div>
                 <div>
