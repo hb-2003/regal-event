@@ -1,4 +1,5 @@
 import { getRepository } from "@/lib/db";
+import { findGalleryImagesByGalleryId, withGalleryImages } from "@/lib/gallery-images";
 import { serializeGalleryPackage } from "@/lib/gallery";
 import {
   buildQuoteAdminNote,
@@ -25,16 +26,14 @@ export async function resolvePackageBooking(
   isAdmin: boolean
 ): Promise<{ ok: true; data: ResolvedPackageBooking } | { ok: false; error: string }> {
   const repo = await getRepository(Gallery);
-  const row = await repo.findOne({
-    where: { id: galleryId },
-    relations: { images: true },
-  });
+  const row = await repo.findOne({ where: { id: galleryId } });
 
   if (!row) {
     return { ok: false, error: "Selected package not found." };
   }
 
-  const pkg = serializeGalleryPackage(row);
+  const images = await findGalleryImagesByGalleryId(galleryId);
+  const pkg = serializeGalleryPackage(withGalleryImages(row, images));
 
   if (pkg.availability_status === "Sold Out" || pkg.availability_status === "Unavailable") {
     return { ok: false, error: "This package is not available for booking." };

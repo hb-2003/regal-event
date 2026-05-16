@@ -2,10 +2,8 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { GalleryImage } from "./GalleryImage.entity";
 
 @Entity("gallery")
 export class Gallery {
@@ -63,7 +61,4 @@ export class Gallery {
 
   @CreateDateColumn({ name: "created_at", type: "timestamp" })
   created_at!: Date;
-
-  @OneToMany(() => GalleryImage, (image) => image.gallery, { cascade: true })
-  images!: GalleryImage[];
 }

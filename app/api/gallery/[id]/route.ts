@@ -6,6 +6,10 @@ import {
   serializeGalleryPackage,
   stringifyInclusions,
 } from "@/lib/gallery";
+import {
+  findGalleryImagesByGalleryId,
+  withGalleryImages,
+} from "@/lib/gallery-images";
 import { unlinkUploadIfExists } from "@/lib/gallery-files";
 import { Gallery } from "@/server/database/entities/Gallery.entity";
 import { GalleryImage } from "@/server/database/entities/GalleryImage.entity";
@@ -117,12 +121,10 @@ export async function GET(
 ) {
   const { id } = await params;
   const repo = await getRepository(Gallery);
-  const row = await repo.findOne({
-    where: { id: Number(id) },
-    relations: { images: true },
-  });
+  const row = await repo.findOne({ where: { id: Number(id) } });
   if (!row) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(serializeGalleryPackage(row));
+  const images = await findGalleryImagesByGalleryId(row.id);
+  return NextResponse.json(serializeGalleryPackage(withGalleryImages(row, images)));
 }
 
 export async function PATCH(
@@ -150,10 +152,7 @@ export async function PATCH(
   const galleryRepo = await getRepository(Gallery);
   const imageRepo = await getRepository(GalleryImage);
 
-  const existing = await galleryRepo.findOne({
-    where: { id: galleryId },
-    relations: { images: true },
-  });
+  const existing = await galleryRepo.findOne({ where: { id: galleryId } });
   if (!existing) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -164,7 +163,8 @@ export async function PATCH(
   }
 
   if (extra_images !== undefined) {
-    for (const img of existing.images ?? []) {
+    const previousImages = await findGalleryImagesByGalleryId(galleryId);
+    for (const img of previousImages) {
       unlinkUploadIfExists(img.image_path);
     }
     await imageRepo.delete({ gallery_id: galleryId });
@@ -181,14 +181,12 @@ export async function PATCH(
     }
   }
 
-  const updated = await galleryRepo.findOne({
-    where: { id: galleryId },
-    relations: { images: true },
-  });
-
-  return NextResponse.json(
-    updated ? serializeGalleryPackage(updated) : { success: true }
-  );
+  const updated = await galleryRepo.findOne({ where: { id: galleryId } });
+  if (!updated) {
+    return NextResponse.json({ success: true });
+  }
+  const images = await findGalleryImagesByGalleryId(galleryId);
+  return NextResponse.json(serializeGalleryPackage(withGalleryImages(updated, images)));
 }
 
 export async function DELETE(
@@ -201,15 +199,13 @@ export async function DELETE(
   const { id } = await params;
   const galleryId = Number(id);
   const galleryRepo = await getRepository(Gallery);
-  const row = await galleryRepo.findOne({
-    where: { id: galleryId },
-    relations: { images: true },
-  });
+  const row = await galleryRepo.findOne({ where: { id: galleryId } });
 
   if (!row) return NextResponse.json({ success: true });
 
   unlinkUploadIfExists(row.image_path);
-  for (const img of row.images ?? []) {
+  const images = await findGalleryImagesByGalleryId(galleryId);
+  for (const img of images) {
     unlinkUploadIfExists(img.image_path);
   }
 

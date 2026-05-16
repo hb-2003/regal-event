@@ -6,6 +6,7 @@ import {
   serializeGalleryPackage,
   stringifyInclusions,
 } from "@/lib/gallery";
+import { attachGalleryImages, findGalleryImagesByGalleryId, withGalleryImages } from "@/lib/gallery-images";
 import { Gallery } from "@/server/database/entities/Gallery.entity";
 import { GalleryImage } from "@/server/database/entities/GalleryImage.entity";
 import { requireAdmin } from "@/lib/auth";
@@ -105,12 +106,12 @@ export async function GET(request: NextRequest) {
 
   const rows = await repo.find({
     where: Object.keys(where).length ? where : undefined,
-    relations: { images: true },
     order: { sort_order: "ASC", created_at: "DESC" },
     take: 500,
   });
 
-  return NextResponse.json(rows.map(serializeGalleryPackage));
+  const withImages = await attachGalleryImages(rows);
+  return NextResponse.json(withImages.map(serializeGalleryPackage));
 }
 
 export async function POST(request: NextRequest) {
@@ -166,13 +167,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const full = await galleryRepo.findOne({
-    where: { id: saved.id },
-    relations: { images: true },
-  });
+  const images = await findGalleryImagesByGalleryId(saved.id);
 
   return NextResponse.json(
-    full ? serializeGalleryPackage(full) : { success: true },
+    serializeGalleryPackage(withGalleryImages(saved, images)),
     { status: 201 }
   );
 }
