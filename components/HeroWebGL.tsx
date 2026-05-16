@@ -49,9 +49,9 @@ const fragmentShader = `
   }
 `;
 
-function LiquidPlane() {
+function LiquidPlane({ textureUrl }: { textureUrl: string }) {
   const materialRef = useRef<THREE.ShaderMaterial>(null);
-  const texture = useTexture("https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=80");
+  const texture = useTexture(textureUrl);
 
   const { viewport, size } = useThree();
 
@@ -113,14 +113,19 @@ function LiquidPlane() {
   );
 }
 
-export default function HeroWebGL() {
+type HeroWebGLProps = {
+  textureUrl?: string;
+};
+
+const FALLBACK_TEXTURE =
+  "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=80";
+
+export default function HeroWebGL({ textureUrl }: HeroWebGLProps) {
+  const src = textureUrl?.trim() || FALLBACK_TEXTURE;
   return (
     <div className="absolute inset-0 z-0">
-      <Canvas
-        camera={{ position: [0, 0, 1] }}
-        dpr={[1, 2]} // Optimize pixel ratio
-      >
-        <LiquidPlane />
+      <Canvas camera={{ position: [0, 0, 1] }} dpr={[1, 2]}>
+        <LiquidPlane key={src} textureUrl={src} />
       </Canvas>
     </div>
   );

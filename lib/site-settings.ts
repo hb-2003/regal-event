@@ -30,20 +30,23 @@ export function normalizeHomeHeroImages(raw: unknown): string[] {
   return slots;
 }
 
-export function parseHomeHeroImages(raw: string | undefined): string[] {
-  if (!raw?.trim()) {
-    return Array.from({ length: HOME_HERO_IMAGE_COUNT }, () => "");
-  }
+export function parseHomeHeroImages(
+  raw: string | string[] | undefined | null
+): string[] {
+  const empty = Array.from({ length: HOME_HERO_IMAGE_COUNT }, () => "");
+  if (raw == null) return empty;
+  if (Array.isArray(raw)) return normalizeHomeHeroImages(raw);
+  if (typeof raw !== "string" || !raw.trim()) return empty;
   try {
     return normalizeHomeHeroImages(JSON.parse(raw));
   } catch {
-    return Array.from({ length: HOME_HERO_IMAGE_COUNT }, () => "");
+    return empty;
   }
 }
 
 /** Home mosaic: use saved uploads when present, otherwise fall back to defaults. */
 export function resolveHomeMosaicImages(
-  raw: string | undefined,
+  raw: string | string[] | undefined | null,
   defaults: readonly string[]
 ): string[] {
   const slots = parseHomeHeroImages(raw);
@@ -54,6 +57,17 @@ export function resolveHomeMosaicImages(
     return trimmed || defaults[i] || defaults[0];
   });
 }
+
+export const DEFAULT_HOME_MOSAIC = [
+  "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&q=80",
+  "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80",
+  "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80",
+  "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80",
+  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&q=80",
+] as const;
+
+export const DEFAULT_HERO_TEXTURE =
+  "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=1920&q=80";
 
 export const ALL_SETTING_KEYS = [
   ...IMAGE_SETTING_KEYS,

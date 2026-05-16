@@ -138,11 +138,13 @@ export default function AdminSettingsPage() {
         await persistImageSettings({ about_hero_image: path });
         setMsg("About hero image uploaded and saved.");
       } else if (index !== undefined) {
-        let next: string[] = [];
-        setHomeHeroImages((prev) => {
-          next = normalizeHomeHeroImages(prev);
-          next[index] = path;
-          return next;
+        const next = await new Promise<string[]>((resolve) => {
+          setHomeHeroImages((prev) => {
+            const updated = normalizeHomeHeroImages(prev);
+            updated[index] = path;
+            resolve(updated);
+            return updated;
+          });
         });
         await persistImageSettings({ home_hero_images: next });
         setMsg(`Mosaic image ${index + 1} uploaded and saved.`);

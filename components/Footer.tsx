@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import {
@@ -17,25 +17,54 @@ const quickLinks = [
   ["Videos", "/videos"],
   ["Contact", "/contact"],
 ];
-const services = [
-  "Birthday Decoration",
-  "Baby Shower",
-  "Engagement",
-  "Haldi Ceremony",
-  "Corporate Event",
-  "Anniversary",
-];
+
+type FooterCategory = { id: number; name: string; slug: string };
+
+/** Max service links in footer — keeps columns balanced vs Explore / Contact */
+const FOOTER_SERVICES_LIMIT = 6;
+
+/** Internal categories (package booking) — not public footer services */
+const FOOTER_EXCLUDED_SLUGS = new Set(["gallery-booking"]);
+
+function publicFooterCategories(all: FooterCategory[]): FooterCategory[] {
+  return all.filter((c) => !FOOTER_EXCLUDED_SLUGS.has(c.slug));
+}
 
 export default function Footer() {
   const year = new Date().getFullYear();
   const textRef = useRef<HTMLSpanElement>(null);
   const [contact, setContact] = useState(() => parseSiteContact({}));
+  const [categories, setCategories] = useState<FooterCategory[]>([]);
 
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => (r.ok ? r.json() : {}))
       .then((data) => setContact(parseSiteContact(data)))
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/categories", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: unknown) => {
+        if (!Array.isArray(data)) {
+          setCategories([]);
+          return;
+        }
+        setCategories(
+          data
+            .filter(
+              (c): c is FooterCategory =>
+                c != null &&
+                typeof c === "object" &&
+                typeof (c as FooterCategory).id === "number" &&
+                typeof (c as FooterCategory).name === "string" &&
+                typeof (c as FooterCategory).slug === "string"
+            )
+            .map((c) => ({ id: c.id, name: c.name, slug: c.slug }))
+        );
+      })
+      .catch(() => setCategories([]));
   }, []);
 
   useEffect(() => {
@@ -59,6 +88,16 @@ export default function Footer() {
       );
     }
   }, []);
+
+  const publicCategories = useMemo(
+    () => publicFooterCategories(categories),
+    [categories]
+  );
+  const footerServices = useMemo(
+    () => publicCategories.slice(0, FOOTER_SERVICES_LIMIT),
+    [publicCategories]
+  );
+  const hasMoreServices = publicCategories.length > FOOTER_SERVICES_LIMIT;
 
   const contactItems = [
     { icon: "◈", text: contact.address },
@@ -205,13 +244,36 @@ export default function Footer() {
                   gap: 16,
                 }}
               >
-                {services.map((s) => (
-                  <li key={s}>
+                {footerServices.length === 0 ? (
+                  <li>
                     <Link href="/categories" className="footer-link">
-                      {s}
+                      View all services
                     </Link>
                   </li>
-                ))}
+                ) : (
+                  <>
+                    {footerServices.map((cat) => (
+                      <li key={cat.id}>
+                        <Link
+                          href={`/book?category=${encodeURIComponent(cat.slug)}`}
+                          className="footer-link"
+                        >
+                          {cat.name}
+                        </Link>
+                      </li>
+                    ))}
+                    {hasMoreServices && (
+                      <li>
+                        <Link
+                          href="/categories"
+                          className="footer-link footer-link-accent"
+                        >
+                          View all services →
+                        </Link>
+                      </li>
+                    )}
+                  </>
+                )}
               </ul>
             </div>
 
@@ -370,6 +432,12 @@ export default function Footer() {
         .footer-link:hover {
           color: #f9f4ee;
           transform: translateX(4px);
+        }
+        .footer-link-accent {
+          color: rgba(252, 205, 151, 0.75);
+        }
+        .footer-link-accent:hover {
+          color: #fccd97;
         }
         .footer-social-link {
           width: 44px;

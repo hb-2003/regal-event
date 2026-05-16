@@ -76,14 +76,14 @@ export async function GET() {
   if (settings.about_hero_image?.trim()) {
     settings.about_hero_image = resolveDisplayImageSrc(settings.about_hero_image);
   }
+  const response: Record<string, unknown> = { ...settings };
   if (settings.home_hero_images) {
-    const slots = parseHomeHeroImages(settings.home_hero_images).map((src) =>
-      src.trim() ? resolveDisplayImageSrc(src) : ""
+    response.home_hero_images = parseHomeHeroImages(settings.home_hero_images).map(
+      (src) => (src.trim() ? resolveDisplayImageSrc(src) : "")
     );
-    settings.home_hero_images = JSON.stringify(slots);
   }
 
-  return NextResponse.json(settings, {
+  return NextResponse.json(response, {
     headers: { "Cache-Control": "no-store, max-age=0" },
   });
 }
