@@ -1,6 +1,7 @@
 import path from "path";
 import fs from "fs";
 import { put } from "@vercel/blob";
+import { blobPathnameFromStored } from "@/lib/media-path";
 
 export type StoredImage = {
   /** Value to save in DB (path or public URL). */
@@ -17,12 +18,26 @@ function isVercelRuntime(): boolean {
   return process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV);
 }
 
+/** Match your Vercel Blob store: `private` (default) or `public`. */
+function getBlobAccess(): "public" | "private" {
+  const raw = process.env["BLOB_STORE_ACCESS"]?.trim().toLowerCase();
+  if (raw === "public" || raw === "private") return raw;
+  return "private";
+}
+
 function blobOptions(token: string | undefined) {
   return {
-    access: "public" as const,
+    access: getBlobAccess(),
     addRandomSuffix: false,
     ...(token ? { token } : {}),
   };
+}
+
+function storedPathForBlob(key: string, blobUrl: string): string {
+  if (getBlobAccess() === "private") {
+    return `/api/media?pathname=${encodeURIComponent(key)}`;
+  }
+  return blobUrl;
 }
 
 export async function storeUploadedImage(
@@ -37,7 +52,7 @@ export async function storeUploadedImage(
   if (onVercel || token) {
     try {
       const blob = await put(key, buffer, blobOptions(token));
-      return { path: blob.url };
+      return { path: storedPathForBlob(key, blob.url) };
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       if (onVercel && !token) {
@@ -62,6 +77,19 @@ export async function deleteStoredImageIfExists(
 ): Promise<void> {
   const p = imagePath?.trim() ?? "";
   if (!p) return;
+
+  const pathname = blobPathnameFromStored(p);
+  if (pathname) {
+    if (!isVercelRuntime() && !getBlobToken()) return;
+    try {
+      const { del } = await import("@vercel/blob");
+      const token = getBlobToken();
+      await del(pathname, token ? { token } : {});
+    } catch (err) {
+      console.error("[media] blob delete failed", err);
+    }
+    return;
+  }
 
   if (p.startsWith("https://")) {
     if (!isVercelRuntime() && !getBlobToken()) return;

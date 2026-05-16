@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { isLocalUploadPath, isRemoteImagePath } from "@/lib/media-path";
+import { resolveDisplayImageSrc, shouldUseNativeImg } from "@/lib/media-path";
 
 type Props = {
   src: string;
@@ -14,11 +14,13 @@ export default function SettingsImagePreview({ src, alt, className }: Props) {
   const trimmed = src?.trim() ?? "";
   if (!trimmed) return null;
 
-  if (isLocalUploadPath(trimmed) || isRemoteImagePath(trimmed)) {
+  const displaySrc = resolveDisplayImageSrc(trimmed);
+
+  if (shouldUseNativeImg(displaySrc)) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={trimmed}
+        src={displaySrc}
         alt={alt}
         className={className ?? "absolute inset-0 h-full w-full object-cover"}
       />
@@ -27,7 +29,7 @@ export default function SettingsImagePreview({ src, alt, className }: Props) {
 
   return (
     <Image
-      src={trimmed}
+      src={displaySrc}
       alt={alt}
       fill
       className={className}

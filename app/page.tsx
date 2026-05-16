@@ -10,7 +10,7 @@ import Manifesto from "@/components/Manifesto";
 import Showreel from "@/components/Showreel";
 import CategoryShowcase from "@/components/CategoryShowcase";
 import TestimonialsSection from "@/components/TestimonialsSection";
-import { isLocalUploadPath, isRemoteImagePath } from "@/lib/media-path";
+import { resolveDisplayImageSrc, shouldUseNativeImg } from "@/lib/media-path";
 import { resolveHomeMosaicImages } from "@/lib/site-settings";
 
 type Category = { id: number; name: string; slug: string; description: string; image: string | null };
@@ -215,18 +215,20 @@ export default function HomePage() {
           {/* 5-Image Mosaic */}
           <div className="hero-mosaic-wrap">
             <div ref={mosaicRef} className="hero-mosaic">
-              {mosaicImgs.map((src, i) => (
-                <div key={`${i}-${src}`} className={`mosaic-pic mosaic-p${i + 1}`}>
-                  {isLocalUploadPath(src) || isRemoteImagePath(src) ? (
+              {mosaicImgs.map((src, i) => {
+                const displaySrc = resolveDisplayImageSrc(src);
+                return (
+                <div key={`${i}-${displaySrc}`} className={`mosaic-pic mosaic-p${i + 1}`}>
+                  {shouldUseNativeImg(displaySrc) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={src}
+                      src={displaySrc}
                       alt="Regal Event Portfolio"
                       style={{ objectFit: "cover", width: "100%", height: "100%" }}
                     />
                   ) : (
                     <Image
-                      src={src}
+                      src={displaySrc}
                       alt="Regal Event Portfolio"
                       fill
                       style={{ objectFit: "cover" }}
@@ -235,7 +237,8 @@ export default function HomePage() {
                     />
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

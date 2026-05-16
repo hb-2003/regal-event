@@ -1,4 +1,4 @@
-import { isAllowedImagePath } from "@/lib/media-path";
+import { isAllowedImagePath, resolveDisplayImageSrc } from "@/lib/media-path";
 import type { Gallery } from "@/server/database/entities/Gallery.entity";
 import type { GalleryImage } from "@/server/database/entities/GalleryImage.entity";
 
@@ -59,7 +59,7 @@ export function serializeGalleryPackage(
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((img) => ({
       id: img.id,
-      image_path: img.image_path,
+      image_path: resolveDisplayImageSrc(img.image_path),
       sort_order: img.sort_order,
     }));
 
@@ -67,7 +67,7 @@ export function serializeGalleryPackage(
     id: row.id,
     title: row.title,
     category: row.category,
-    image_path: row.image_path,
+    image_path: resolveDisplayImageSrc(row.image_path),
     description: row.description,
     price: row.price,
     guest_pricing_enabled: Boolean(row.guest_pricing_enabled),

@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRepository } from "@/lib/db";
 import { Setting } from "@/server/database/entities/Setting.entity";
 import { requireAdmin } from "@/lib/auth";
+import { isAllowedImagePath, resolveDisplayImageSrc } from "@/lib/media-path";
 import {
   ALL_SETTING_KEYS,
   CONTACT_SETTING_KEYS,
   normalizeHomeHeroImages,
+  parseHomeHeroImages,
   serializeSocialLinks,
   type SettingKey,
 } from "@/lib/site-settings";
@@ -24,7 +26,9 @@ function serializeSettingValue(
 ): string | null {
   if (key === "about_hero_image") {
     if (typeof value !== "string" || !value.trim()) return null;
-    return value.trim().slice(0, 2000);
+    const url = value.trim().slice(0, 2000);
+    if (!isAllowedImagePath(url)) return null;
+    return url;
   }
 
   if (key === "home_hero_images") {
@@ -42,9 +46,10 @@ function serializeSettingValue(
 
     if (!Array.isArray(images)) return null;
 
-    return JSON.stringify(
-      normalizeHomeHeroImages(images).map((u) => u.trim().slice(0, 2000))
-    );
+    const slots = normalizeHomeHeroImages(images).map((u) => u.trim().slice(0, 2000));
+    if (slots.some((u) => u && !isAllowedImagePath(u))) return null;
+
+    return JSON.stringify(slots);
   }
 
   if (key === "social_links") {
@@ -66,6 +71,16 @@ export async function GET() {
   const settings: Record<string, string> = {};
   for (const row of rows) {
     settings[row.key] = row.value;
+  }
+
+  if (settings.about_hero_image?.trim()) {
+    settings.about_hero_image = resolveDisplayImageSrc(settings.about_hero_image);
+  }
+  if (settings.home_hero_images) {
+    const slots = parseHomeHeroImages(settings.home_hero_images).map((src) =>
+      src.trim() ? resolveDisplayImageSrc(src) : ""
+    );
+    settings.home_hero_images = JSON.stringify(slots);
   }
 
   return NextResponse.json(settings, {
