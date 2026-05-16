@@ -24,7 +24,7 @@ COPY migrations ./migrations
 COPY src/server/database ./src/server/database
 COPY tsconfig.json tsconfig.migration.json ./
 ENV NODE_ENV=production
-CMD ["npm", "run", "migration:run"]
+CMD ["sh", "-c", "npm run migration:run && npm run db:seed"]
 
 # Production image — Next.js standalone only (migrations run via `migrate` service)
 FROM base AS runner

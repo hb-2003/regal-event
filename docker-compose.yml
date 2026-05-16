@@ -26,6 +26,8 @@ services:
       target: migrator
     environment:
       DATABASE_URL: postgres://regaladmin:regalpassword@db:5432/regal_events
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
     depends_on:
       db:
         condition: service_healthy
