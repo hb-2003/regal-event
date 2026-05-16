@@ -98,7 +98,6 @@ function CategoryCard({ cat, index }: { cat: CategoryItem; index: number }) {
               fill
               className="cat-bg-img"
               style={{ objectFit: "cover" }}
-              sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 33vw"
             />
           </div>
           <div className="cat-darken" />

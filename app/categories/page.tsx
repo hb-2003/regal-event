@@ -121,7 +121,6 @@ export default function CategoriesPage() {
                           src={resolveCategoryImage(cat.slug, cat.image, cat.id)}
                           alt={cat.name}
                           fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 33vw"
                           style={{ objectFit:"cover", transition:"transform .65s ease" }}
                         />
                         <div style={{

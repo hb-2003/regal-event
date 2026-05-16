@@ -140,7 +140,6 @@ export default function AdminCategoriesPage() {
                       alt={cat.name}
                       fill
                       className="object-cover"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
