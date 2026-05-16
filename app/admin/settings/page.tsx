@@ -8,12 +8,28 @@ import {
 } from "@/lib/site-settings";
 
 const inputClass =
-  "w-full p-3 rounded bg-black/20 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#FCCD97]/50";
+  "w-full px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#015961]/30";
+const inputStyle = {
+  border: "1px solid #EDE5D8",
+  color: "#222",
+  backgroundColor: "white",
+} as const;
+const labelClass = "block text-xs font-semibold tracking-widest uppercase mb-1.5";
+const labelStyle = { color: "#555" } as const;
+const sectionClass = "rounded-xl p-5 sm:p-6";
+const sectionStyle = {
+  backgroundColor: "white",
+  border: "1px solid #EDE5D8",
+} as const;
+
+const fileInputClass =
+  "block w-full text-sm text-[#555] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#EDE5D8] file:text-[#015961] hover:file:bg-[#FCCD97]/40 cursor-pointer";
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [msgError, setMsgError] = useState(false);
 
   const [aboutHeroImage, setAboutHeroImage] = useState("");
   const [homeHeroImages, setHomeHeroImages] = useState<string[]>(Array(5).fill(""));
@@ -36,9 +52,7 @@ export default function AdminSettingsPage() {
         setFooterTagline(contact.tagline);
         setSocialLinks(contact.socialLinks);
 
-        if (data.about_hero_image) {
-          setAboutHeroImage(data.about_hero_image);
-        }
+        if (data.about_hero_image) setAboutHeroImage(data.about_hero_image);
         if (data.home_hero_images) {
           try {
             const parsed = JSON.parse(data.home_hero_images);
@@ -64,27 +78,23 @@ export default function AdminSettingsPage() {
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
-      if (type === "about") {
-        setAboutHeroImage(data.url);
-      } else if (type === "home" && index !== undefined) {
+      if (type === "about") setAboutHeroImage(data.url);
+      else if (type === "home" && index !== undefined) {
         handleHomeHeroImageChange(index, data.url);
       }
-    } catch (err: any) {
-      alert(err.message || "Failed to upload image.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to upload image.");
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function handleSave() {
     setSaving(true);
     setMsg("");
+    setMsgError(false);
 
     try {
       const res = await fetch("/api/settings", {
@@ -104,118 +114,270 @@ export default function AdminSettingsPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to save settings");
+        throw new Error(
+          (err as { error?: string }).error || "Failed to save settings"
+        );
       }
 
-      setMsg("Settings saved successfully!");
-      setTimeout(() => setMsg(""), 3000);
-    } catch (err: any) {
-      setMsg(err.message || "An error occurred");
+      setMsg("Settings saved successfully.");
+      setTimeout(() => setMsg(""), 4000);
+    } catch (err: unknown) {
+      setMsgError(true);
+      setMsg(err instanceof Error ? err.message : "An error occurred");
     } finally {
       setSaving(false);
     }
-  };
+  }
 
   if (loading) {
-    return <div className="p-8 text-white/60">Loading settings...</div>;
+    return (
+      <div className="max-w-7xl mx-auto w-full p-10 text-center" style={{ color: "#888" }}>
+        Loading settings…
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-7xl mx-auto w-full">
+      <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl mb-2 text-[#F9F4EE]" style={{ fontFamily: "var(--font-cormorant), serif" }}>Site Settings</h1>
-          <p className="text-sm text-white/50">
+          <h1
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold"
+            style={{ color: "#012D32", fontFamily: "var(--font-cormorant), serif" }}
+          >
+            Site Settings
+          </h1>
+          <p className="text-xs sm:text-sm mt-1" style={{ color: "#888" }}>
             Contact details for the footer and contact page, plus hero images.
           </p>
         </div>
         <button
+          type="button"
           onClick={handleSave}
           disabled={saving}
-          className="btn-gold"
-          style={{ padding: "10px 24px", fontSize: "0.85rem" }}
+          className="shrink-0 px-5 py-2.5 rounded-lg text-sm font-semibold tracking-wider transition-all hover:shadow-md disabled:opacity-60"
+          style={{ backgroundColor: "#015961", color: "#FCCD97", minHeight: 44 }}
         >
-          <span>{saving ? "Saving..." : "Save Settings"}</span>
+          {saving ? "Saving…" : "Save settings"}
         </button>
       </div>
 
       {msg && (
-        <div className="mb-6 p-4 rounded bg-[#022C32] border border-[#FCCD97]/20 text-[#FCCD97] text-sm">
+        <div
+          className="mb-6 px-4 py-3 rounded-lg text-sm"
+          style={{
+            backgroundColor: msgError ? "#fde8e8" : "#EDE5D8",
+            color: msgError ? "#c1121f" : "#015961",
+            border: `1px solid ${msgError ? "#f5c2c2" : "#FCCD97"}`,
+          }}
+        >
           {msg}
         </div>
       )}
 
-      <div className="space-y-12">
-        <section className="p-6 rounded-xl bg-[#022C32] border border-[#FCCD97]/10">
+      <div className="space-y-6 sm:space-y-8">
+        <section className={sectionClass} style={sectionStyle}>
           <h2
-            className="text-xl text-[#FCCD97] mb-2"
-            style={{ fontFamily: "var(--font-cormorant), serif" }}
+            className="text-xl sm:text-2xl font-bold mb-1"
+            style={{ color: "#012D32", fontFamily: "var(--font-cormorant), serif" }}
           >
             Contact &amp; footer
           </h2>
-          <p className="text-sm text-white/50 mb-6">
+          <p className="text-xs sm:text-sm mb-6" style={{ color: "#888" }}>
             Shown in the site footer and on the contact page.
           </p>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Address</label>
-              <input type="text" value={contactAddress} onChange={(e) => setContactAddress(e.target.value)} className={inputClass} />
+              <label className={labelClass} style={labelStyle}>
+                Address
+              </label>
+              <input
+                type="text"
+                value={contactAddress}
+                onChange={(e) => setContactAddress(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Phone</label>
-              <input type="text" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className={inputClass} />
+              <label className={labelClass} style={labelStyle}>
+                Phone
+              </label>
+              <input
+                type="text"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Email</label>
-              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className={inputClass} />
+              <label className={labelClass} style={labelStyle}>
+                Email
+              </label>
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">Opening hours</label>
-              <input type="text" value={contactHours} onChange={(e) => setContactHours(e.target.value)} className={inputClass} placeholder="Mon–Sat · 9am–8pm" />
+              <label className={labelClass} style={labelStyle}>
+                Opening hours
+              </label>
+              <input
+                type="text"
+                value={contactHours}
+                onChange={(e) => setContactHours(e.target.value)}
+                className={inputClass}
+                style={inputStyle}
+                placeholder="Mon–Sat · 9am–8pm"
+              />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-white/70 mb-2">Footer brand description</label>
-              <textarea rows={3} value={footerTagline} onChange={(e) => setFooterTagline(e.target.value)} className={`${inputClass} resize-none`} />
+              <label className={labelClass} style={labelStyle}>
+                Footer brand description
+              </label>
+              <textarea
+                rows={3}
+                value={footerTagline}
+                onChange={(e) => setFooterTagline(e.target.value)}
+                className={`${inputClass} resize-none`}
+                style={inputStyle}
+              />
             </div>
           </div>
-          <h3 className="text-sm font-medium text-[#FCCD97] mb-3 tracking-wider uppercase">Social links</h3>
+
+          <h3
+            className="text-xs font-semibold tracking-widest uppercase mb-3"
+            style={{ color: "#015961" }}
+          >
+            Social links
+          </h3>
           <div className="space-y-3">
             {socialLinks.map((link, i) => (
-              <div key={i} className="grid grid-cols-1 sm:grid-cols-[72px_1fr_1fr_auto] gap-2 items-center bg-black/20 p-3 rounded border border-white/5">
-                <input type="text" value={link.abbr} onChange={(e) => { const next = [...socialLinks]; next[i] = { ...next[i], abbr: e.target.value }; setSocialLinks(next); }} className={inputClass} placeholder="ig" maxLength={8} />
-                <input type="text" value={link.label} onChange={(e) => { const next = [...socialLinks]; next[i] = { ...next[i], label: e.target.value }; setSocialLinks(next); }} className={inputClass} placeholder="Instagram" />
-                <input type="url" value={link.href} onChange={(e) => { const next = [...socialLinks]; next[i] = { ...next[i], href: e.target.value }; setSocialLinks(next); }} className={inputClass} placeholder="https://" />
-                <button type="button" onClick={() => setSocialLinks(socialLinks.filter((_, j) => j !== i))} className="text-xs text-white/50 hover:text-red-300 px-2 py-2" disabled={socialLinks.length <= 1}>Remove</button>
+              <div
+                key={i}
+                className="grid grid-cols-1 sm:grid-cols-[80px_1fr_1fr_auto] gap-3 items-center p-3 rounded-lg"
+                style={{ backgroundColor: "#F9F4EE", border: "1px solid #EDE5D8" }}
+              >
+                <input
+                  type="text"
+                  value={link.abbr}
+                  onChange={(e) => {
+                    const next = [...socialLinks];
+                    next[i] = { ...next[i], abbr: e.target.value };
+                    setSocialLinks(next);
+                  }}
+                  className={inputClass}
+                  style={inputStyle}
+                  placeholder="ig"
+                  maxLength={8}
+                />
+                <input
+                  type="text"
+                  value={link.label}
+                  onChange={(e) => {
+                    const next = [...socialLinks];
+                    next[i] = { ...next[i], label: e.target.value };
+                    setSocialLinks(next);
+                  }}
+                  className={inputClass}
+                  style={inputStyle}
+                  placeholder="Instagram"
+                />
+                <input
+                  type="url"
+                  value={link.href}
+                  onChange={(e) => {
+                    const next = [...socialLinks];
+                    next[i] = { ...next[i], href: e.target.value };
+                    setSocialLinks(next);
+                  }}
+                  className={inputClass}
+                  style={inputStyle}
+                  placeholder="https://"
+                />
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSocialLinks(socialLinks.filter((_, j) => j !== i))
+                  }
+                  className="text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                  style={{
+                    color: "#c1121f",
+                    border: "1px solid #EDE5D8",
+                    backgroundColor: "white",
+                  }}
+                  disabled={socialLinks.length <= 1}
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>
           {socialLinks.length < 8 && (
-            <button type="button" onClick={() => setSocialLinks([...socialLinks, { abbr: "", label: "", href: "" }])} className="mt-3 text-sm text-[#FCCD97] hover:underline">+ Add social link</button>
+            <button
+              type="button"
+              onClick={() =>
+                setSocialLinks([...socialLinks, { abbr: "", label: "", href: "" }])
+              }
+              className="mt-4 text-sm font-semibold tracking-wide"
+              style={{ color: "#015961" }}
+            >
+              + Add social link
+            </button>
           )}
         </section>
 
-        <section className="p-6 rounded-xl bg-[#022C32] border border-[#FCCD97]/10">
-          <h2 className="text-xl text-[#FCCD97] mb-4" style={{ fontFamily: "var(--font-cormorant), serif" }}>About Page Hero Image</h2>
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="w-full md:w-1/2">
-              <label className="block text-sm font-medium text-white/70 mb-2">Current Image</label>
-              <div className="relative w-full aspect-video bg-black/40 rounded overflow-hidden mb-4 border border-[#FCCD97]/20">
+        <section className={sectionClass} style={sectionStyle}>
+          <h2
+            className="text-xl sm:text-2xl font-bold mb-4"
+            style={{ color: "#012D32", fontFamily: "var(--font-cormorant), serif" }}
+          >
+            About page hero image
+          </h2>
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="w-full lg:w-1/2">
+              <label className={labelClass} style={labelStyle}>
+                Current image
+              </label>
+              <div
+                className="relative w-full aspect-video rounded-lg overflow-hidden mb-4"
+                style={{ backgroundColor: "#F9F4EE", border: "1px solid #EDE5D8" }}
+              >
                 {aboutHeroImage ? (
-                  <Image src={aboutHeroImage} alt="About Hero" fill style={{ objectFit: "cover" }} />
+                  <Image
+                    src={aboutHeroImage}
+                    alt="About hero"
+                    fill
+                    style={{ objectFit: "cover" }}
+                  />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-white/30 text-sm">No image set</div>
+                  <div
+                    className="absolute inset-0 flex items-center justify-center text-sm"
+                    style={{ color: "#888" }}
+                  >
+                    No image set
+                  </div>
                 )}
               </div>
               <input
                 type="text"
                 value={aboutHeroImage}
                 onChange={(e) => setAboutHeroImage(e.target.value)}
-                className="w-full p-3 rounded bg-black/20 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#FCCD97]/50"
+                className={inputClass}
+                style={inputStyle}
                 placeholder="Image URL or upload"
               />
             </div>
-            <div className="w-full md:w-1/2">
-              <label className="block text-sm font-medium text-white/70 mb-2">Upload New Image</label>
+            <div className="w-full lg:w-1/2">
+              <label className={labelClass} style={labelStyle}>
+                Upload new image
+              </label>
               <input
                 type="file"
                 accept="image/*"
@@ -223,43 +385,69 @@ export default function AdminSettingsPage() {
                   const file = e.target.files?.[0];
                   if (file) handleUpload(file, "about");
                 }}
-                className="block w-full text-sm text-white/50
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-[#FCCD97]/10 file:text-[#FCCD97]
-                  hover:file:bg-[#FCCD97]/20 cursor-pointer"
+                className={fileInputClass}
               />
-              <p className="text-xs text-white/40 mt-3">High-resolution horizontal image recommended (e.g., 2000x1200).</p>
+              <p className="text-xs mt-3" style={{ color: "#888" }}>
+                High-resolution horizontal image recommended (e.g. 2000×1200).
+              </p>
             </div>
           </div>
         </section>
 
-        {/* Home Page Mosaic */}
-        <section className="p-6 rounded-xl bg-[#022C32] border border-[#FCCD97]/10">
-          <h2 className="text-xl text-[#FCCD97] mb-2" style={{ fontFamily: "var(--font-cormorant), serif" }}>Home Page Mosaic Images</h2>
-          <p className="text-sm text-white/50 mb-6">These 5 images form the animated mosaic collage on the home page hero.</p>
+        <section className={sectionClass} style={sectionStyle}>
+          <h2
+            className="text-xl sm:text-2xl font-bold mb-1"
+            style={{ color: "#012D32", fontFamily: "var(--font-cormorant), serif" }}
+          >
+            Home page mosaic images
+          </h2>
+          <p className="text-xs sm:text-sm mb-6" style={{ color: "#888" }}>
+            These 5 images form the animated mosaic collage on the home page hero.
+          </p>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {homeHeroImages.map((imgUrl, i) => (
-              <div key={i} className="flex flex-col md:flex-row gap-4 items-center bg-black/20 p-4 rounded border border-white/5">
-                <div className="w-24 h-24 relative bg-black/40 rounded overflow-hidden flex-shrink-0 border border-white/10">
+              <div
+                key={i}
+                className="flex flex-col md:flex-row gap-4 items-center p-4 rounded-lg"
+                style={{ backgroundColor: "#F9F4EE", border: "1px solid #EDE5D8" }}
+              >
+                <div
+                  className="w-24 h-24 relative rounded-lg overflow-hidden shrink-0"
+                  style={{ backgroundColor: "#EDE5D8", border: "1px solid #EDE5D8" }}
+                >
                   {imgUrl ? (
-                    <Image src={imgUrl} alt={`Mosaic ${i + 1}`} fill style={{ objectFit: "cover" }} />
+                    <Image
+                      src={imgUrl}
+                      alt={`Mosaic ${i + 1}`}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
                   ) : (
-                    <div className="absolute inset-0 flex items-center justify-center text-white/20 text-xs">Empty</div>
+                    <div
+                      className="absolute inset-0 flex items-center justify-center text-xs"
+                      style={{ color: "#888" }}
+                    >
+                      Empty
+                    </div>
                   )}
                 </div>
-                <div className="flex-1 w-full">
-                  <label className="block text-xs font-medium text-white/60 mb-1">Image {i + 1} URL</label>
+                <div className="flex-1 w-full min-w-0">
+                  <label className={labelClass} style={labelStyle}>
+                    Image {i + 1} URL
+                  </label>
                   <input
                     type="text"
                     value={imgUrl}
                     onChange={(e) => handleHomeHeroImageChange(i, e.target.value)}
-                    className="w-full p-2 rounded bg-black/40 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#FCCD97]/50"
+                    className={inputClass}
+                    style={inputStyle}
                   />
                 </div>
-                <div className="w-full md:w-auto">
+                <div className="w-full md:w-auto shrink-0">
+                  <label className={`${labelClass} md:invisible`} style={labelStyle}>
+                    Upload
+                  </label>
                   <input
                     type="file"
                     accept="image/*"
@@ -267,11 +455,7 @@ export default function AdminSettingsPage() {
                       const file = e.target.files?.[0];
                       if (file) handleUpload(file, "home", i);
                     }}
-                    className="block w-full text-xs text-white/50
-                      file:mr-2 file:py-1 file:px-3
-                      file:rounded file:border-0
-                      file:bg-[#FCCD97]/10 file:text-[#FCCD97]
-                      hover:file:bg-[#FCCD97]/20 cursor-pointer"
+                    className={fileInputClass}
                   />
                 </div>
               </div>
