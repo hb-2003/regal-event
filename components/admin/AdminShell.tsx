@@ -15,7 +15,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   }
 
   return (
-    <div className="flex min-h-screen" style={{ background: "#011F23" }}>
+    <div
+      className="flex h-dvh max-h-dvh overflow-hidden"
+      style={{ background: "#011F23" }}
+      data-lenis-prevent
+    >
       {menuOpen && (
         <button
           type="button"
@@ -26,7 +30,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       )}
       <AdminSidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header
           className="sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3 lg:hidden"
           style={{
@@ -93,8 +97,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </header>
 
         <main
-          className="min-w-0 flex-1 overflow-auto p-4 sm:p-6 lg:p-8"
+          className="admin-modal-scroll min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 lg:p-8"
           style={{ backgroundColor: "#F9F4EE" }}
+          data-lenis-prevent
         >
           {children}
         </main>

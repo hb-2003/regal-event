@@ -51,9 +51,10 @@ export default function AdminSidebar({ open, onClose }: Props) {
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[min(82vw,280px)] shrink-0 flex-col border-r transition-transform duration-300 ease-out lg:static lg:z-auto lg:translate-x-0 ${
+      className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh w-[min(82vw,280px)] shrink-0 flex-col overflow-hidden border-r transition-transform duration-300 ease-out lg:static lg:z-auto lg:h-full lg:max-h-none lg:translate-x-0 ${
         open ? "translate-x-0" : "-translate-x-full"
       }`}
+      data-lenis-prevent
       style={{
         backgroundColor: "#012D32",
         borderColor: "rgba(252,205,151,0.1)",
@@ -61,7 +62,7 @@ export default function AdminSidebar({ open, onClose }: Props) {
       aria-label="Admin navigation"
     >
       <div
-        className="hidden border-b p-5 lg:block"
+        className="hidden shrink-0 border-b p-5 lg:block"
         style={{ borderColor: "rgba(252,205,151,0.1)" }}
       >
         <div className="flex items-center gap-3">
@@ -115,7 +116,7 @@ export default function AdminSidebar({ open, onClose }: Props) {
       </div>
 
       <div
-        className="flex items-center justify-between border-b p-5 lg:hidden"
+        className="flex shrink-0 items-center justify-between border-b p-5 lg:hidden"
         style={{ borderColor: "rgba(252,205,151,0.1)" }}
       >
         <span
@@ -151,7 +152,7 @@ export default function AdminSidebar({ open, onClose }: Props) {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+      <nav className="admin-sidebar-scroll min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-3">
         {links.map((link) => {
           const active = pathname === link.href;
           return (
@@ -175,7 +176,7 @@ export default function AdminSidebar({ open, onClose }: Props) {
       </nav>
 
       <div
-        className="space-y-1 border-t p-3"
+        className="shrink-0 space-y-1 border-t p-3"
         style={{ borderColor: "rgba(252,205,151,0.1)" }}
       >
         <Link

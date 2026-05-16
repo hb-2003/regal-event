@@ -1,29 +1,42 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import {
+  emailToMailtoHref,
+  parseSiteContact,
+  phoneToTelHref,
+} from "@/lib/site-settings";
 
-const quickLinks = [["Home","/"],["About","/about"],["Services","/categories"],["Gallery","/gallery"],["Videos","/videos"],["Contact","/contact"]];
-const services = ["Birthday Decoration","Baby Shower","Engagement","Haldi Ceremony","Corporate Event","Anniversary"];
-
-const socialLinks = [
-  { l: "in", h: "#", label: "LinkedIn" },
-  { l: "ig", h: "#", label: "Instagram" },
-  { l: "tw", h: "#", label: "Twitter" },
-  { l: "wa", h: "https://wa.me/447700000000", label: "WhatsApp" },
+const quickLinks = [
+  ["Home", "/"],
+  ["About", "/about"],
+  ["Services", "/categories"],
+  ["Gallery", "/gallery"],
+  ["Videos", "/videos"],
+  ["Contact", "/contact"],
 ];
-
-const contactItems = [
-  { icon: "◈", text: "London, United Kingdom" },
-  { icon: "☏", text: "+44 7700 000 000", href: "tel:+447700000000" },
-  { icon: "✉", text: "info@regalevent.co.uk", href: "mailto:info@regalevent.co.uk" },
-  { icon: "◷", text: "Mon–Sat · 9am–8pm" },
+const services = [
+  "Birthday Decoration",
+  "Baby Shower",
+  "Engagement",
+  "Haldi Ceremony",
+  "Corporate Event",
+  "Anniversary",
 ];
 
 export default function Footer() {
   const year = new Date().getFullYear();
   const textRef = useRef<HTMLSpanElement>(null);
+  const [contact, setContact] = useState(() => parseSiteContact({}));
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data) => setContact(parseSiteContact(data)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -47,80 +60,201 @@ export default function Footer() {
     }
   }, []);
 
+  const contactItems = [
+    { icon: "◈", text: contact.address },
+    {
+      icon: "☏",
+      text: contact.phone,
+      href: phoneToTelHref(contact.phone) || undefined,
+    },
+    {
+      icon: "✉",
+      text: contact.email,
+      href: emailToMailtoHref(contact.email) || undefined,
+    },
+    { icon: "◷", text: contact.hours },
+  ];
+
   return (
-    <footer style={{ background:"#010E10", position: "relative", overflow: "hidden", borderTop: "1px solid rgba(252,205,151,.05)" }}>
+    <footer
+      style={{
+        background: "#010E10",
+        position: "relative",
+        overflow: "hidden",
+        borderTop: "1px solid rgba(252,205,151,.05)",
+      }}
+    >
       <div
         className="mx-auto"
         style={{
           maxWidth: "1400px",
           paddingInline: "var(--gutter)",
           paddingTop: "clamp(60px, 10vw, 100px)",
-          paddingBottom: "24px"
+          paddingBottom: "24px",
         }}
       >
         <div className="footer-grid">
-          {/* Brand */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
             <div>
-              <Link href="/" style={{ textDecoration:"none", display: "inline-block", marginBottom: 32 }}>
-                <span style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.8rem, 2.5vw, 2.2rem)", fontWeight:400, color:"#FCCD97", display:"block", lineHeight: 1 }}>
+              <Link
+                href="/"
+                style={{
+                  textDecoration: "none",
+                  display: "inline-block",
+                  marginBottom: 32,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-cormorant),serif",
+                    fontSize: "clamp(1.8rem, 2.5vw, 2.2rem)",
+                    fontWeight: 400,
+                    color: "#FCCD97",
+                    display: "block",
+                    lineHeight: 1,
+                  }}
+                >
                   Regal Event
                 </span>
-                <span style={{ fontSize:".65rem", letterSpacing:".25em", textTransform:"uppercase", color:"rgba(249,244,238,.4)", marginTop: 8, display:"block" }}>
+                <span
+                  style={{
+                    fontSize: ".65rem",
+                    letterSpacing: ".25em",
+                    textTransform: "uppercase",
+                    color: "rgba(249,244,238,.4)",
+                    marginTop: 8,
+                    display: "block",
+                  }}
+                >
                   London
                 </span>
               </Link>
-              <p style={{ fontSize:".9rem", color:"rgba(249,244,238,.4)", lineHeight:1.8, maxWidth:320 }}>
-                Crafting extraordinary celebrations with unparalleled elegance and meticulous care since 2019.
+              <p
+                style={{
+                  fontSize: ".9rem",
+                  color: "rgba(249,244,238,.4)",
+                  lineHeight: 1.8,
+                  maxWidth: 320,
+                }}
+              >
+                {contact.tagline}
               </p>
             </div>
 
-            <div style={{ display:"flex", gap:12, marginTop:40, flexWrap:"wrap" }}>
-              {socialLinks.map(s => (
-                <a key={s.l} href={s.h} aria-label={s.label} className="footer-social-link">
-                  {s.l}
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                marginTop: 40,
+                flexWrap: "wrap",
+              }}
+            >
+              {contact.socialLinks.map((s) => (
+                <a
+                  key={`${s.abbr}-${s.href}`}
+                  href={s.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={s.label}
+                  className="footer-social-link"
+                >
+                  {s.abbr}
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Links Section Wrapper */}
           <div className="footer-links-wrapper">
-            {/* Quick Links */}
             <div>
               <h4 className="footer-heading">Explore</h4>
-              <ul style={{ listStyle:"none", padding:0, margin:0, display:"flex", flexDirection:"column", gap:16 }}>
-                {quickLinks.map(([label,href])=>(
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16,
+                }}
+              >
+                {quickLinks.map(([label, href]) => (
                   <li key={href}>
-                    <Link href={href} className="footer-link">{label}</Link>
+                    <Link href={href} className="footer-link">
+                      {label}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Services */}
             <div>
               <h4 className="footer-heading">Services</h4>
-              <ul style={{ listStyle:"none", padding:0, margin:0, display:"flex", flexDirection:"column", gap:16 }}>
-                {services.map(s=>(
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16,
+                }}
+              >
+                {services.map((s) => (
                   <li key={s}>
-                    <Link href="/categories" className="footer-link">{s}</Link>
+                    <Link href="/categories" className="footer-link">
+                      {s}
+                    </Link>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Contact */}
             <div>
               <h4 className="footer-heading">Contact</h4>
-              <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-                {contactItems.map(item => (
-                  <div key={item.text} style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-                    <span style={{ color:"rgba(252,205,151,0.5)", fontSize:".9rem", marginTop:2 }}>{item.icon}</span>
-                    {item.href
-                      ? <a href={item.href} className="footer-link" style={{ lineHeight:1.5 }}>{item.text}</a>
-                      : <span style={{ fontSize:".9rem", color:"rgba(249,244,238,.4)", lineHeight:1.5 }}>{item.text}</span>
-                    }
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                {contactItems.map((item) => (
+                  <div
+                    key={item.text}
+                    style={{
+                      display: "flex",
+                      gap: 14,
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "rgba(252,205,151,0.5)",
+                        fontSize: ".9rem",
+                        marginTop: 2,
+                      }}
+                    >
+                      {item.icon}
+                    </span>
+                    {item.href ? (
+                      <a
+                        href={item.href}
+                        className="footer-link"
+                        style={{ lineHeight: 1.5 }}
+                      >
+                        {item.text}
+                      </a>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: ".9rem",
+                          color: "rgba(249,244,238,.4)",
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        {item.text}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -128,46 +262,80 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Massive Typography */}
-        <div style={{
-          marginTop: "clamp(80px, 12vw, 140px)",
-          width: "100%",
-          display: "flex",
-          justifyContent: "center",
-          borderBottom: "1px solid rgba(252,205,151,.05)",
-          paddingBottom: "clamp(20px, 4vw, 40px)",
-          overflow: "hidden"
-        }}>
-          <span ref={textRef} style={{
-            fontFamily: "var(--font-cormorant), serif",
-            fontSize: "clamp(5rem, 18.5vw, 22rem)",
-            fontWeight: 300,
-            lineHeight: 0.75,
-            letterSpacing: "-0.02em",
-            color: "#F9F4EE",
-            whiteSpace: "nowrap",
-            opacity: 0.95,
-            display: "inline-block"
-          }}>
+        <div
+          style={{
+            marginTop: "clamp(80px, 12vw, 140px)",
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            borderBottom: "1px solid rgba(252,205,151,.05)",
+            paddingBottom: "clamp(20px, 4vw, 40px)",
+            overflow: "hidden",
+          }}
+        >
+          <span
+            ref={textRef}
+            style={{
+              fontFamily: "var(--font-cormorant), serif",
+              fontSize: "clamp(5rem, 18.5vw, 22rem)",
+              fontWeight: 300,
+              lineHeight: 0.75,
+              letterSpacing: "-0.02em",
+              color: "#F9F4EE",
+              whiteSpace: "nowrap",
+              opacity: 0.95,
+              display: "inline-block",
+            }}
+          >
             R E G A L
           </span>
         </div>
 
-        {/* Bottom */}
-        <div style={{
-          paddingTop: 24,
-          display:"flex", alignItems:"center", justifyContent:"space-between",
-          flexWrap:"wrap", gap:16
-        }}>
-          <span style={{ fontSize:".75rem", color:"rgba(249,244,238,.3)", letterSpacing: ".05em" }}>
+        <div
+          style={{
+            paddingTop: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 16,
+          }}
+        >
+          <span
+            style={{
+              fontSize: ".75rem",
+              color: "rgba(249,244,238,.3)",
+              letterSpacing: ".05em",
+            }}
+          >
             © {year} REGAL EVENT LONDON. ALL RIGHTS RESERVED.
           </span>
-          <div style={{ display:"flex", gap:24, flexWrap:"wrap" }}>
-            {[["Track Booking","/track"],["Book an Event","/book"],["Admin","/admin/login"]].map(([l,h])=>(
-              <Link key={h} href={h} style={{ fontSize:".75rem", color:"rgba(249,244,238,.3)", textDecoration:"none", transition:"color .3s", letterSpacing: ".05em" }}
-                onMouseEnter={e=>(e.currentTarget as HTMLElement).style.color="#FCCD97"}
-                onMouseLeave={e=>(e.currentTarget as HTMLElement).style.color="rgba(249,244,238,.3)"}
-              >{l}</Link>
+          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+            {[
+              ["Track Booking", "/track"],
+              ["Book an Event", "/book"],
+              ["Admin", "/admin/login"],
+            ].map(([l, h]) => (
+              <Link
+                key={h}
+                href={h}
+                style={{
+                  fontSize: ".75rem",
+                  color: "rgba(249,244,238,.3)",
+                  textDecoration: "none",
+                  transition: "color .3s",
+                  letterSpacing: ".05em",
+                }}
+                onMouseEnter={(e) =>
+                  ((e.currentTarget as HTMLElement).style.color = "#FCCD97")
+                }
+                onMouseLeave={(e) =>
+                  ((e.currentTarget as HTMLElement).style.color =
+                    "rgba(249,244,238,.3)")
+                }
+              >
+                {l}
+              </Link>
             ))}
           </div>
         </div>
@@ -185,41 +353,41 @@ export default function Footer() {
           gap: 40px;
         }
         .footer-heading {
-          font-size: .65rem;
+          font-size: 0.65rem;
           font-weight: 500;
-          letter-spacing: .25em;
+          letter-spacing: 0.25em;
           text-transform: uppercase;
-          color: #FCCD97;
+          color: #fccd97;
           margin-bottom: 28px;
         }
         .footer-link {
-          font-size: .95rem;
-          color: rgba(249,244,238,.5);
+          font-size: 0.95rem;
+          color: rgba(249, 244, 238, 0.5);
           text-decoration: none;
-          transition: color .3s, transform .3s;
+          transition: color 0.3s, transform 0.3s;
           display: inline-block;
         }
         .footer-link:hover {
-          color: #F9F4EE;
+          color: #f9f4ee;
           transform: translateX(4px);
         }
         .footer-social-link {
           width: 44px;
           height: 44px;
-          border: 1px solid rgba(252,205,151,.15);
+          border: 1px solid rgba(252, 205, 151, 0.15);
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: rgba(249,244,238,.5);
-          font-size: .8rem;
+          color: rgba(249, 244, 238, 0.5);
+          font-size: 0.8rem;
           text-decoration: none;
-          transition: all .3s;
+          transition: all 0.3s;
         }
         .footer-social-link:hover {
-          border-color: #FCCD97;
+          border-color: #fccd97;
           color: #111;
-          background: #FCCD97;
+          background: #fccd97;
           transform: translateY(-3px);
         }
 

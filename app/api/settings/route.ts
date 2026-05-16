@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRepository } from "@/lib/db";
 import { Setting } from "@/server/database/entities/Setting.entity";
 import { requireAdmin } from "@/lib/auth";
-
-const ALLOWED_KEYS = ["home_hero_images", "about_hero_image"] as const;
-type SettingKey = (typeof ALLOWED_KEYS)[number];
+import {
+  ALL_SETTING_KEYS,
+  serializeSocialLinks,
+  type SettingKey,
+} from "@/lib/site-settings";
 
 function isAllowedKey(key: string): key is SettingKey {
-  return (ALLOWED_KEYS as readonly string[]).includes(key);
+  return (ALL_SETTING_KEYS as readonly string[]).includes(key);
+}
+
+function isContactKey(key: string): boolean {
+  return (CONTACT_SETTING_KEYS as readonly string[]).includes(key);
 }
 
 function serializeSettingValue(
@@ -19,22 +25,35 @@ function serializeSettingValue(
     return value.trim().slice(0, 2000);
   }
 
-  const images = Array.isArray(value)
-    ? value
-    : typeof value === "string"
-      ? (() => {
-          try {
-            return JSON.parse(value);
-          } catch {
-            return null;
-          }
-        })()
-      : null;
+  if (key === "home_hero_images") {
+    const images = Array.isArray(value)
+      ? value
+      : typeof value === "string"
+        ? (() => {
+            try {
+              return JSON.parse(value);
+            } catch {
+              return null;
+            }
+          })()
+        : null;
 
-  if (!Array.isArray(images) || images.length !== 5) return null;
-  if (!images.every((u) => typeof u === "string" && u.trim())) return null;
+    if (!Array.isArray(images) || images.length !== 5) return null;
+    if (!images.every((u) => typeof u === "string" && u.trim())) return null;
 
-  return JSON.stringify(images.map((u) => String(u).trim().slice(0, 2000)));
+    return JSON.stringify(images.map((u) => String(u).trim().slice(0, 2000)));
+  }
+
+  if (key === "social_links") {
+    return serializeSocialLinks(value);
+  }
+
+  if (isContactKey(key)) {
+    if (typeof value !== "string" || !value.trim()) return null;
+    return value.trim().slice(0, 2000);
+  }
+
+  return null;
 }
 
 export async function GET() {

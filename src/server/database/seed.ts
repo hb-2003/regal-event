@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import bcrypt from "bcryptjs";
 import { DEFAULT_CATEGORY_IMAGES } from "@/lib/category-display";
+import { CONTACT_DEFAULTS } from "@/lib/site-settings";
 import { AppDataSource } from "./data-source";
 import { Admin } from "./entities/Admin.entity";
 import { Category } from "./entities/Category.entity";
@@ -96,6 +97,18 @@ async function seed() {
       await settingRepo.save(settingRepo.create(s));
     }
     console.log(`Seeded ${defaultSettings.length} settings`);
+  }
+
+  let contactSeeded = 0;
+  for (const s of CONTACT_DEFAULTS) {
+    const exists = await settingRepo.findOneBy({ key: s.key });
+    if (!exists) {
+      await settingRepo.save(settingRepo.create(s));
+      contactSeeded += 1;
+    }
+  }
+  if (contactSeeded > 0) {
+    console.log(`Seeded ${contactSeeded} contact/footer settings`);
   }
 
   const reviewRepo = AppDataSource.getRepository(Review);

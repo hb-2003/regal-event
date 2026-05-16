@@ -1,6 +1,14 @@
 "use client";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import {
+  DEFAULT_SOCIAL_LINKS,
+  parseSiteContact,
+  type SocialLink,
+} from "@/lib/site-settings";
+
+const inputClass =
+  "w-full p-3 rounded bg-black/20 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[#FCCD97]/50";
 
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -9,11 +17,25 @@ export default function AdminSettingsPage() {
 
   const [aboutHeroImage, setAboutHeroImage] = useState("");
   const [homeHeroImages, setHomeHeroImages] = useState<string[]>(Array(5).fill(""));
+  const [contactAddress, setContactAddress] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactHours, setContactHours] = useState("");
+  const [footerTagline, setFooterTagline] = useState("");
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>(DEFAULT_SOCIAL_LINKS);
 
   useEffect(() => {
     fetch("/api/settings")
       .then((res) => res.json())
       .then((data) => {
+        const contact = parseSiteContact(data);
+        setContactAddress(contact.address);
+        setContactPhone(contact.phone);
+        setContactEmail(contact.email);
+        setContactHours(contact.hours);
+        setFooterTagline(contact.tagline);
+        setSocialLinks(contact.socialLinks);
+
         if (data.about_hero_image) {
           setAboutHeroImage(data.about_hero_image);
         }
@@ -69,12 +91,21 @@ export default function AdminSettingsPage() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          contact_address: contactAddress,
+          contact_phone: contactPhone,
+          contact_email: contactEmail,
+          contact_hours: contactHours,
+          footer_tagline: footerTagline,
+          social_links: socialLinks,
           about_hero_image: aboutHeroImage,
           home_hero_images: homeHeroImages,
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to save settings");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to save settings");
+      }
 
       setMsg("Settings saved successfully!");
       setTimeout(() => setMsg(""), 3000);
@@ -94,7 +125,9 @@ export default function AdminSettingsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl mb-2 text-[#F9F4EE]" style={{ fontFamily: "var(--font-cormorant), serif" }}>Site Settings</h1>
-          <p className="text-sm text-white/50">Manage dynamic images across the site.</p>
+          <p className="text-sm text-white/50">
+            Contact details for the footer and contact page, plus hero images.
+          </p>
         </div>
         <button
           onClick={handleSave}
@@ -113,7 +146,54 @@ export default function AdminSettingsPage() {
       )}
 
       <div className="space-y-12">
-        {/* About Page Hero */}
+        <section className="p-6 rounded-xl bg-[#022C32] border border-[#FCCD97]/10">
+          <h2
+            className="text-xl text-[#FCCD97] mb-2"
+            style={{ fontFamily: "var(--font-cormorant), serif" }}
+          >
+            Contact &amp; footer
+          </h2>
+          <p className="text-sm text-white/50 mb-6">
+            Shown in the site footer and on the contact page.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">Address</label>
+              <input type="text" value={contactAddress} onChange={(e) => setContactAddress(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">Phone</label>
+              <input type="text" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">Email</label>
+              <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-white/70 mb-2">Opening hours</label>
+              <input type="text" value={contactHours} onChange={(e) => setContactHours(e.target.value)} className={inputClass} placeholder="Mon–Sat · 9am–8pm" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-white/70 mb-2">Footer brand description</label>
+              <textarea rows={3} value={footerTagline} onChange={(e) => setFooterTagline(e.target.value)} className={`${inputClass} resize-none`} />
+            </div>
+          </div>
+          <h3 className="text-sm font-medium text-[#FCCD97] mb-3 tracking-wider uppercase">Social links</h3>
+          <div className="space-y-3">
+            {socialLinks.map((link, i) => (
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-[72px_1fr_1fr_auto] gap-2 items-center bg-black/20 p-3 rounded border border-white/5">
+                <input type="text" value={link.abbr} onChange={(e) => { const next = [...socialLinks]; next[i] = { ...next[i], abbr: e.target.value }; setSocialLinks(next); }} className={inputClass} placeholder="ig" maxLength={8} />
+                <input type="text" value={link.label} onChange={(e) => { const next = [...socialLinks]; next[i] = { ...next[i], label: e.target.value }; setSocialLinks(next); }} className={inputClass} placeholder="Instagram" />
+                <input type="url" value={link.href} onChange={(e) => { const next = [...socialLinks]; next[i] = { ...next[i], href: e.target.value }; setSocialLinks(next); }} className={inputClass} placeholder="https://" />
+                <button type="button" onClick={() => setSocialLinks(socialLinks.filter((_, j) => j !== i))} className="text-xs text-white/50 hover:text-red-300 px-2 py-2" disabled={socialLinks.length <= 1}>Remove</button>
+              </div>
+            ))}
+          </div>
+          {socialLinks.length < 8 && (
+            <button type="button" onClick={() => setSocialLinks([...socialLinks, { abbr: "", label: "", href: "" }])} className="mt-3 text-sm text-[#FCCD97] hover:underline">+ Add social link</button>
+          )}
+        </section>
+
         <section className="p-6 rounded-xl bg-[#022C32] border border-[#FCCD97]/10">
           <h2 className="text-xl text-[#FCCD97] mb-4" style={{ fontFamily: "var(--font-cormorant), serif" }}>About Page Hero Image</h2>
           <div className="flex flex-col md:flex-row gap-6 items-start">
