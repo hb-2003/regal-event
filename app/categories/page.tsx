@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import StoredImage from "@/components/StoredImage";
+import { resolveCategoryImage } from "@/lib/category-display";
 
 type Category = { id:number; name:string; slug:string; description:string; image:string|null };
 
@@ -116,15 +117,12 @@ export default function CategoriesPage() {
                   <div style={{ position:"relative", width:"100%", aspectRatio:"4/3", overflow:"hidden" }}>
                     {cat.image ? (
                       <>
-                        <Image
-                          src={cat.image} alt={cat.name} fill
+                        <StoredImage
+                          src={resolveCategoryImage(cat.slug, cat.image, cat.id)}
+                          alt={cat.name}
+                          fill
                           sizes="(max-width: 640px) 100vw, (max-width: 960px) 50vw, 33vw"
                           style={{ objectFit:"cover", transition:"transform .65s ease" }}
-                          onError={(e)=>{
-                            (e.currentTarget as HTMLElement).style.display="none";
-                            const fallback = (e.currentTarget as HTMLElement).nextElementSibling as HTMLElement;
-                            if (fallback) fallback.style.display="flex";
-                          }}
                         />
                         <div style={{
                           display:"none", position:"absolute", inset:0, flexDirection:"column",

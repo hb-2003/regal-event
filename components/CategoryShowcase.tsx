@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
-import Image from "next/image";
 import Link from "next/link";
+import StoredImage from "@/components/StoredImage";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import TextReveal from "@/components/TextReveal";
@@ -92,7 +92,7 @@ function CategoryCard({ cat, index }: { cat: CategoryItem; index: number }) {
           <div className="cat-card-frame" aria-hidden />
           <div ref={shineRef} className="cat-shine" aria-hidden />
           <div ref={imgRef} className="cat-bg">
-            <Image
+            <StoredImage
               src={imgSrc}
               alt={cat.name}
               fill

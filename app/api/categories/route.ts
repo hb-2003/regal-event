@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRepository } from "@/lib/db";
 import { Category } from "@/server/database/entities/Category.entity";
 import { requireAdmin } from "@/lib/auth";
+import { isAllowedImagePath } from "@/lib/media-path";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -40,6 +41,9 @@ export async function POST(request: NextRequest) {
   }
   if (!SLUG_RE.test(slug)) {
     return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
+  }
+  if (image && !isAllowedImagePath(image)) {
+    return NextResponse.json({ error: "Invalid image" }, { status: 400 });
   }
 
   const repo = await getRepository(Category);

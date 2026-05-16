@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getRepository } from "@/lib/db";
 import { Category } from "@/server/database/entities/Category.entity";
 import { requireAdmin } from "@/lib/auth";
+import { isAllowedImagePath } from "@/lib/media-path";
 
 export async function GET(
   _request: NextRequest,
@@ -41,6 +42,9 @@ export async function PATCH(
 
   if (!name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  }
+  if (image && !isAllowedImagePath(image)) {
+    return NextResponse.json({ error: "Invalid image" }, { status: 400 });
   }
 
   const repo = await getRepository(Category);

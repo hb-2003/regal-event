@@ -1,3 +1,5 @@
+import { resolveDisplayImageSrc } from "@/lib/media-path";
+
 /** Shared category visuals for public pages (keyed by slug from DB). */
 
 export const CATEGORY_GRADIENTS: Record<string, string> = {
@@ -82,6 +84,6 @@ export function resolveCategoryImage(
   image: string | null | undefined,
   index = 0
 ): string {
-  if (image?.trim()) return image.trim();
+  if (image?.trim()) return resolveDisplayImageSrc(image.trim());
   return DEFAULT_CATEGORY_IMAGES[slug] ?? FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
 }

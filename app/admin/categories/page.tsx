@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import StoredImage from "@/components/StoredImage";
+import { resolveDisplayImageSrc } from "@/lib/media-path";
 
 type Category = {
   id: number;
@@ -47,7 +48,7 @@ export default function AdminCategoriesPage() {
   function openEdit(cat: Category) {
     setSelected(cat);
     setForm({ name: cat.name, description: cat.description || "", sort_order: String(cat.sort_order) });
-    setImagePreview(cat.image || "");
+    setImagePreview(cat.image ? resolveDisplayImageSrc(cat.image) : "");
     setImageFile(null);
     setModal("edit");
   }
@@ -69,7 +70,11 @@ export default function AdminCategoriesPage() {
       const fd = new FormData();
       fd.append("file", imageFile);
       fd.append("folder", "categories");
-      const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        credentials: "include",
+        body: fd,
+      });
       const uploadData = await uploadRes.json();
       if (!uploadRes.ok) {
         alert(uploadData.error || "Image upload failed");
@@ -130,7 +135,13 @@ export default function AdminCategoriesPage() {
               <div key={cat.id} className="bg-white rounded-xl overflow-hidden shadow-sm" style={{ border: "1px solid #EDE5D8" }}>
                 <div className="relative" style={{ backgroundColor: "#015961", aspectRatio: "16/10" }}>
                   {cat.image ? (
-                    <Image src={cat.image} alt={cat.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                    <StoredImage
+                      src={cat.image}
+                      alt={cat.name}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-5xl opacity-10 text-white">✦</span>
@@ -213,7 +224,7 @@ export default function AdminCategoriesPage() {
                 </label>
                 {imagePreview && (
                   <div className="h-32 rounded-lg overflow-hidden mb-2 relative" style={{ backgroundColor: "#EDE5D8" }}>
-                    <Image src={imagePreview} alt="Preview" fill className="object-cover" />
+                    <StoredImage src={imagePreview} alt="Preview" fill className="object-cover" />
                   </div>
                 )}
                 <input
