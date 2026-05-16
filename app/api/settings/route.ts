@@ -4,6 +4,7 @@ import { Setting } from "@/server/database/entities/Setting.entity";
 import { requireAdmin } from "@/lib/auth";
 import {
   ALL_SETTING_KEYS,
+  CONTACT_SETTING_KEYS,
   serializeSocialLinks,
   type SettingKey,
 } from "@/lib/site-settings";
