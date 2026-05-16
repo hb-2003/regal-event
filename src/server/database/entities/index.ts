@@ -3,5 +3,7 @@ export { Booking } from "./Booking.entity";
 export { Category } from "./Category.entity";
 export { Contact } from "./Contact.entity";
 export { Gallery } from "./Gallery.entity";
+export { Review } from "./Review.entity";
+export { ReviewInvite } from "./ReviewInvite.entity";
 export { Setting } from "./Setting.entity";
 export { Video } from "./Video.entity";

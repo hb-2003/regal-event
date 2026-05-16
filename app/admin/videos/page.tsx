@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import AdminSidebar from "@/components/admin/AdminSidebar";
 
 type Video = { id: number; title: string; youtube_url: string; description: string; created_at: string };
 
@@ -72,9 +71,7 @@ export default function AdminVideosPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen" style={{ backgroundColor: "#F9F4EE" }}>
-      <AdminSidebar />
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-w-0">
+    <>
         <div className="max-w-5xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
             <div>
@@ -156,7 +153,6 @@ export default function AdminVideosPage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Add/Edit Modal */}
       {modal && (
@@ -245,6 +241,6 @@ export default function AdminVideosPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

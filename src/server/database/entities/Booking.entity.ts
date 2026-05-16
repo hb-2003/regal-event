@@ -38,6 +38,10 @@ export class Booking {
   @Column({ type: "text", nullable: true })
   budget!: string | null;
 
+  /** Agreed / final price set by admin when confirming (payment amount). */
+  @Column({ name: "final_amount", type: "text", nullable: true })
+  final_amount!: string | null;
+
   @Column({ type: "text", nullable: true })
   notes!: string | null;
 

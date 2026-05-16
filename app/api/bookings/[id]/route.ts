@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRepository } from "@/lib/db";
 import { Booking } from "@/server/database/entities/Booking.entity";
-import { sendStatusUpdateToClient } from "@/lib/email";
+import { sendBookingStatusChangeEmail } from "@/lib/email";
+import { ensureReviewInviteForBooking } from "@/lib/review-service";
 import { requireAdmin } from "@/lib/auth";
 
 const ALLOWED_STATUSES = ["Pending", "Confirmed", "Completed", "Cancelled"] as const;
@@ -49,7 +50,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid booking id" }, { status: 400 });
   }
 
-  let body: { status?: string; admin_notes?: string };
+  let body: { status?: string; admin_notes?: string; final_amount?: string | null };
   try {
     body = await request.json();
   } catch {
@@ -70,25 +71,64 @@ export async function PATCH(
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
+  let final_amount = booking.final_amount;
+  if (body.final_amount !== undefined) {
+    final_amount = body.final_amount
+      ? String(body.final_amount).trim().slice(0, 80)
+      : null;
+  }
+
+  if (status === "Confirmed" && !final_amount) {
+    return NextResponse.json(
+      { error: "Please enter the confirmed amount / payment before confirming." },
+      { status: 400 }
+    );
+  }
+
+  const previousStatus = booking.status;
   booking.status = status;
   booking.admin_notes = admin_notes;
+  booking.final_amount = final_amount;
   await repo.save(booking);
 
+  let emailSent = false;
   try {
-    await sendStatusUpdateToClient({
-      full_name: booking.full_name,
-      email: booking.email,
-      booking_id: booking.booking_id,
-      status,
-      admin_notes: admin_notes ?? undefined,
-      event_date: booking.event_date,
-      category: booking.category,
-    });
+    emailSent = await sendBookingStatusChangeEmail(
+      {
+        full_name: booking.full_name,
+        email: booking.email,
+        booking_id: booking.booking_id,
+        event_date: booking.event_date,
+        category: booking.category,
+        venue: booking.venue,
+        guests: booking.guests,
+        admin_notes,
+        budget: booking.budget,
+        final_amount: booking.final_amount,
+      },
+      previousStatus,
+      status
+    );
+    if (!emailSent && previousStatus !== status) {
+      console.warn("[bookings] status email skipped — SMTP not configured");
+    }
   } catch (err) {
     console.error("[bookings] status email failed", err);
   }
 
-  return NextResponse.json({ success: true });
+  if (status === "Completed") {
+    try {
+      await ensureReviewInviteForBooking(booking);
+    } catch (err) {
+      console.error("[bookings] review invite failed", err);
+    }
+  }
+
+  return NextResponse.json({
+    success: true,
+    emailSent,
+    statusChanged: previousStatus !== status,
+  });
 }
 
 export async function DELETE(

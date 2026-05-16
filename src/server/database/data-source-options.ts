@@ -6,6 +6,8 @@ import {
   Category,
   Contact,
   Gallery,
+  Review,
+  ReviewInvite,
   Setting,
   Video,
 } from "./entities";
@@ -16,6 +18,8 @@ export const entities = [
   Category,
   Contact,
   Gallery,
+  Review,
+  ReviewInvite,
   Setting,
   Video,
 ];

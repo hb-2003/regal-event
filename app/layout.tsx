@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import SiteChrome from "@/components/SiteChrome";
 import SmoothScroll from "@/components/SmoothScroll";
 import Preloader from "@/components/Preloader";
 import CursorFollower from "@/components/CursorFollower";
@@ -43,9 +42,7 @@ export default function RootLayout({
         <CursorFollower />
         <div className="grain-overlay" aria-hidden="true" />
         <SmoothScroll>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <SiteChrome>{children}</SiteChrome>
         </SmoothScroll>
       </body>
     </html>

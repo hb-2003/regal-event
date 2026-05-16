@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import AdminSidebar from "@/components/admin/AdminSidebar";
 
 type Category = {
   id: number;
@@ -72,6 +71,11 @@ export default function AdminCategoriesPage() {
       fd.append("folder", "categories");
       const uploadRes = await fetch("/api/upload", { method: "POST", body: fd });
       const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) {
+        alert(uploadData.error || "Image upload failed");
+        setSaving(false);
+        return;
+      }
       if (uploadData.path) imagePath = uploadData.path;
     }
 
@@ -103,9 +107,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen" style={{ backgroundColor: "#F9F4EE" }}>
-      <AdminSidebar />
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-w-0">
+    <>
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
             <div>
@@ -165,7 +167,6 @@ export default function AdminCategoriesPage() {
             ))}
           </div>
         </div>
-      </div>
 
       {/* Add/Edit Modal */}
       {modal && (
@@ -260,6 +261,6 @@ export default function AdminCategoriesPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

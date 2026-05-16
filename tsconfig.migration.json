@@ -15,5 +15,5 @@
       "@/server/*": ["./src/server/*"]
     }
   },
-  "include": ["src/server/database/**/*.ts", "migrations/**/*.ts"]
+  "include": ["src/server/database/**/*.ts", "migrations/**/*.ts", "lib/category-display.ts"]
 }

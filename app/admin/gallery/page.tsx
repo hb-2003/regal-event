@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import AdminSidebar from "@/components/admin/AdminSidebar";
 
 type GalleryItem = { id: number; title: string; category: string; image_path: string; created_at: string };
 type Category = { name: string };
@@ -76,9 +75,7 @@ export default function AdminGalleryPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen" style={{ backgroundColor: "#F9F4EE" }}>
-      <AdminSidebar />
-      <div className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto min-w-0">
+    <>
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 sm:mb-8">
             <div>
@@ -147,7 +144,6 @@ export default function AdminGalleryPage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Upload Modal */}
       {modal && (
@@ -231,6 +227,6 @@ export default function AdminGalleryPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

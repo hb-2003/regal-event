@@ -3,10 +3,87 @@ import { getRepository } from "@/lib/db";
 import { Booking } from "@/server/database/entities/Booking.entity";
 import { generateBookingId, requireAdmin } from "@/lib/auth";
 import {
-  sendBookingConfirmationToClient,
+  isEmailConfigured,
   sendBookingAlertToAdmin,
+  sendBookingConfirmedToClient,
+  sendNewBookingEmails,
+  sendStatusUpdateToClient,
 } from "@/lib/email";
+
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ALLOWED_STATUSES = ["Pending", "Confirmed", "Completed", "Cancelled"] as const;
+const ADMIN_CREATE_STATUSES = ["Pending", "Confirmed"] as const;
+
+async function notifyForNewBooking(
+  booking: {
+    full_name: string;
+    email: string;
+    phone: string;
+    booking_id: string;
+    event_date: string;
+    category: string;
+    venue: string | null;
+    guests: number | null;
+    budget: string | null;
+    final_amount: string | null;
+    notes: string | null;
+    admin_notes: string | null;
+    status: string;
+  },
+  sendEmails: boolean
+): Promise<boolean> {
+  if (!sendEmails || !isEmailConfigured()) return false;
+
+  const client = {
+    full_name: booking.full_name,
+    email: booking.email,
+    booking_id: booking.booking_id,
+    event_date: booking.event_date,
+    category: booking.category,
+    venue: booking.venue ?? undefined,
+    guests: booking.guests ?? undefined,
+    budget: booking.budget ?? undefined,
+    final_amount: booking.final_amount ?? undefined,
+    admin_notes: booking.admin_notes ?? undefined,
+  };
+
+  if (booking.status === "Confirmed") {
+    await Promise.all([
+      sendBookingConfirmedToClient(client),
+      sendBookingAlertToAdmin({
+        full_name: booking.full_name,
+        email: booking.email,
+        phone: booking.phone,
+        booking_id: booking.booking_id,
+        event_date: booking.event_date,
+        category: booking.category,
+        venue: client.venue,
+        guests: client.guests,
+        budget: booking.budget ?? undefined,
+        notes: booking.notes ?? undefined,
+      }),
+    ]);
+    return true;
+  }
+
+  if (booking.status === "Pending") {
+    return sendNewBookingEmails({
+      full_name: booking.full_name,
+      email: booking.email,
+      phone: booking.phone,
+      booking_id: booking.booking_id,
+      event_date: booking.event_date,
+      category: booking.category,
+      venue: client.venue,
+      guests: client.guests,
+      budget: booking.budget ?? undefined,
+      notes: booking.notes ?? undefined,
+    });
+  }
+
+  await sendStatusUpdateToClient({ ...client, status: booking.status });
+  return true;
+}
 
 function escapeLike(s: string) {
   return s.replace(/[\\%_]/g, (c) => "\\" + c);
@@ -49,6 +126,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  const auth = requireAdmin(request);
+  const isAdmin = !(auth instanceof NextResponse);
+
   const full_name = String(body.full_name ?? "").trim().slice(0, 120);
   const phone = String(body.phone ?? "").trim().slice(0, 40);
   const email = String(body.email ?? "").trim().toLowerCase().slice(0, 200);
@@ -60,7 +140,48 @@ export async function POST(request: NextRequest) {
       ? Math.max(1, Math.min(100000, Math.floor(Number(body.guests))))
       : null;
   const budget = body.budget ? String(body.budget).trim().slice(0, 80) : null;
+  let final_amount = body.final_amount
+    ? String(body.final_amount).trim().slice(0, 80)
+    : null;
   const notes = body.notes ? String(body.notes).trim().slice(0, 2000) : null;
+  const admin_notes = body.admin_notes
+    ? String(body.admin_notes).trim().slice(0, 2000)
+    : null;
+
+  let status: string;
+  if (isAdmin) {
+    const s =
+      body.status !== undefined && body.status !== null && body.status !== ""
+        ? String(body.status).trim()
+        : "Confirmed";
+    if (!ADMIN_CREATE_STATUSES.includes(s as (typeof ADMIN_CREATE_STATUSES)[number])) {
+      return NextResponse.json(
+        {
+          error:
+            "New bookings can only be created as Pending or Confirmed. Mark Completed after the event.",
+        },
+        { status: 400 }
+      );
+    }
+    status = s;
+    if (status === "Confirmed" && !final_amount && budget) {
+      final_amount = budget;
+    }
+    if (status === "Confirmed" && !final_amount) {
+      return NextResponse.json(
+        { error: "Enter the agreed price when creating a confirmed booking." },
+        { status: 400 }
+      );
+    }
+  } else {
+    if (body.status !== undefined && body.status !== null && body.status !== "") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+    status = "Pending";
+    final_amount = null;
+  }
+
+  const sendEmails = isAdmin ? body.send_emails !== false : true;
 
   if (!full_name || !phone || !email || !event_date || !category) {
     return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
@@ -89,36 +210,39 @@ export async function POST(request: NextRequest) {
       venue,
       guests,
       budget,
+      final_amount: isAdmin ? final_amount : null,
       notes,
+      status,
+      admin_notes: isAdmin ? admin_notes : null,
     })
   );
 
+  let emailSent = false;
   try {
-    await sendBookingConfirmationToClient({
-      full_name,
-      email,
-      booking_id,
-      event_date,
-      category,
-      venue: venue ?? undefined,
-      guests: guests ?? undefined,
-      budget: budget ?? undefined,
-    });
-    await sendBookingAlertToAdmin({
-      full_name,
-      email,
-      phone,
-      booking_id,
-      event_date,
-      category,
-      venue: venue ?? undefined,
-      guests: guests ?? undefined,
-      budget: budget ?? undefined,
-      notes: notes ?? undefined,
-    });
+    emailSent = await notifyForNewBooking(
+      {
+        full_name,
+        email,
+        phone,
+        booking_id,
+        event_date,
+        category,
+        venue,
+        guests,
+        budget,
+        final_amount: isAdmin ? final_amount : null,
+        notes,
+        admin_notes: isAdmin ? admin_notes : null,
+        status,
+      },
+      sendEmails
+    );
+    if (sendEmails && !emailSent) {
+      console.warn("[bookings] SMTP not configured — set EMAIL_* or SMTP_* in .env");
+    }
   } catch (err) {
     console.error("[bookings] email send failed", err);
   }
 
-  return NextResponse.json({ success: true, booking_id }, { status: 201 });
+  return NextResponse.json({ success: true, booking_id, emailSent, status }, { status: 201 });
 }

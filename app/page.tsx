@@ -8,30 +8,17 @@ import TextReveal from "@/components/TextReveal";
 import HeroWebGL from "@/components/HeroWebGL";
 import Manifesto from "@/components/Manifesto";
 import Showreel from "@/components/Showreel";
+import CategoryShowcase from "@/components/CategoryShowcase";
+import TestimonialsSection from "@/components/TestimonialsSection";
 
 type Category = { id: number; name: string; slug: string; description: string; image: string | null };
 type GalleryItem = { id: number; image_path: string; title: string };
-
-const testimonials = [
-  { name: "Lady Charlotte Ashworth", location: "Mayfair, London", text: "Regal Event transformed our vision into something that transcended our grandest expectations. Every detail was absolute perfection.", rating: 5, event: "Summer Wedding Gala, 2024", detail: "200 guests. Florals by Philippa Craddock, catering by Raymond Blanc. A seamless 14-hour experience." },
-  { name: "James Whitmore", location: "CEO, Whitmore Capital", text: "Our annual gala has never been more spectacular. Regal Event's attention to the finest nuances is simply unmatched.", rating: 5, event: "Annual Investment Gala, 2024", detail: "500 executives at The Gherkin. Full AV, live jazz quartet, three-course Michelin menu. Flawless." },
-  { name: "Priya & Oliver Shah", location: "Kensington, London", text: "From first consultation to the final champagne toast, Regal made us feel as though we were their only clients in the world.", rating: 5, event: "Engagement Soirée, 2024", detail: "Intimate dinner for 40 at a private Notting Hill townhouse. String quartet, gold-leaf personalised menus." },
-];
 
 const steps = [
   { num: "01", title: "The Vision Consultation", side: "right", desc: "An intimate conversation to understand your aspirations, aesthetic sensibilities, and the story you wish to tell." },
   { num: "02", title: "Bespoke Concept Design", side: "left", desc: "Our creative team develops a tailored concept — venue, florals, lighting, entertainment — every element considered." },
   { num: "03", title: "Seamless Coordination", side: "right", desc: "We manage every detail and supplier relationship with precision, ensuring flawless execution behind the scenes." },
   { num: "04", title: "The Extraordinary Moment", side: "left", desc: "Your event unfolds with effortless grace as you simply savour every extraordinary moment we have curated for you." },
-];
-
-const placeholderCats = [
-  { id:0, name:"Luxury Weddings", slug:"weddings", description:"Timeless ceremonies crafted with meticulous precision.", image:null },
-  { id:1, name:"Corporate Galas", slug:"corporate", description:"Sophisticated events that elevate your brand.", image:null },
-  { id:2, name:"Private Dining", slug:"dining", description:"Exclusive dining in London's most distinguished venues.", image:null },
-  { id:3, name:"Product Launches", slug:"launches", description:"Brand experiences that captivate and inspire.", image:null },
-  { id:4, name:"Award Ceremonies", slug:"awards", description:"Prestigious celebrations of achievement.", image:null },
-  { id:5, name:"Intimate Celebrations", slug:"celebrations", description:"Bespoke milestones curated with warmth.", image:null },
 ];
 
 const DEFAULT_MOSAIC = [
@@ -44,6 +31,7 @@ const DEFAULT_MOSAIC = [
 
 export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [mosaicImgs, setMosaicImgs] = useState<string[]>(DEFAULT_MOSAIC);
@@ -57,7 +45,11 @@ export default function HomePage() {
   const statsStarted = useRef(false);
 
   useEffect(() => {
-    fetch("/api/categories").then(r=>r.json()).then(d=>setCategories(d.slice(0,6))).catch(()=>{});
+    fetch("/api/categories")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((d: Category[]) => setCategories(Array.isArray(d) ? d : []))
+      .catch(() => setCategories([]))
+      .finally(() => setCategoriesLoading(false));
     fetch("/api/gallery").then(r=>r.json()).then(d=>setGallery(d.slice(0,9))).catch(()=>{});
 
     fetch("/api/settings").then(r=>r.json()).then(d=>{
@@ -179,32 +171,6 @@ export default function HomePage() {
     return () => observer.disconnect();
   }, []);
 
-  // Category 3D tilt — disabled on touch devices
-  const handleCatMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (window.matchMedia("(hover: none)").matches) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    const dx = (e.clientX - r.left - r.width/2) / r.width;
-    const dy = (e.clientY - r.top - r.height/2) / r.height;
-    (e.currentTarget as HTMLElement).style.transform = `perspective(760px) rotateX(${-dy*9}deg) rotateY(${dx*9}deg) scale(1.018)`;
-    (e.currentTarget as HTMLElement).style.transition = "transform .06s ease";
-  };
-  const handleCatLeave = (e: React.MouseEvent<HTMLElement>) => {
-    (e.currentTarget as HTMLElement).style.transform = "perspective(760px) rotateX(0) rotateY(0) scale(1)";
-    (e.currentTarget as HTMLElement).style.transition = "transform .5s ease";
-  };
-
-  const displayCats = categories.length > 0 ? categories : placeholderCats;
-
-  const catBgs = [
-    "https://images.unsplash.com/photo-1519741347686-c1e0aadf4611?w=800&q=80",
-    "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80",
-    "https://images.unsplash.com/photo-1472653431158-6364773b2a56?w=800&q=80",
-    "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=800&q=80",
-    "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&q=80",
-    "https://images.unsplash.com/photo-1493780474015-ba834fd0ce2f?w=800&q=80",
-  ];
-  const catIcons = ["♢","◈","◇","✦","⬡","◉"];
-
   return (
     <>
       {/* ── HERO ─────────────────────────────────────────────── */}
@@ -302,35 +268,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── CATEGORIES ───────────────────────────────────────── */}
-      <section className="section" style={{ background:"#011F23" }}>
-        <div className="container-x" style={{ maxWidth: 1200, marginInline:"auto" }}>
-          <div style={{ maxWidth:520, marginBottom:"clamp(36px,6vw,60px)" }}>
-            <div className="s-label reveal">Our Expertise</div>
-            <TextReveal as="h2" className="lux-title" delay={0.1}>Crafted for Every <em>Occasion</em></TextReveal>
-          </div>
-          <div className="grid-1-2-3">
-            {displayCats.map((cat, i) => (
-              <Link key={cat.id} href={`/book?category=${cat.slug}`}
-                className="cat-card reveal"
-                style={{ aspectRatio:"4/5", display:"block", textDecoration:"none", transitionDelay:`${i*.08}s` }}
-                onMouseMove={handleCatMove} onMouseLeave={handleCatLeave}
-              >
-                {cat.image
-                  ? <div className="cat-bg"><Image src={cat.image} alt={cat.name} fill style={{ objectFit:"cover" }} /></div>
-                  : <div className="cat-bg" style={{ backgroundImage:`url('${catBgs[i % catBgs.length]}')` }} />
-                }
-                <div className="cat-darken" />
-                <div className="cat-body">
-                  <span style={{ fontSize:"1.2rem", color:"#FCCD97", display:"block", marginBottom:10 }}>{catIcons[i % catIcons.length]}</span>
-                  <div style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.3rem,2.4vw,1.7rem)", fontWeight:400, color:"#F9F4EE", marginBottom:8 }}>{cat.name}</div>
-                  <div className="cat-desc">{cat.description || "Bespoke experiences crafted with precision and elegance."}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <CategoryShowcase categories={categories} loading={categoriesLoading} limit={6} />
 
       {/* ── SHOWREEL ─────────────────────────────────────────── */}
       <Showreel />
@@ -413,33 +351,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── TESTIMONIALS ─────────────────────────────────────── */}
-      <section className="section" style={{ background:"#022C32" }}>
-        <div className="container-x" style={{ maxWidth: 1200, marginInline:"auto" }}>
-          <div style={{ textAlign:"center", marginBottom:"clamp(60px,10vw,100px)" }}>
-            <div className="s-label s-label-center reveal">Client Stories</div>
-            <TextReveal as="h2" className="lux-title" delay={0.1}>Words of <em>Distinction</em></TextReveal>
-          </div>
-          <div className="grid-1-2-3" style={{ gap: "clamp(40px, 6vw, 80px)" }}>
-            {testimonials.map((t, i) => (
-              <div
-                key={i}
-                className="reveal"
-                style={{ transitionDelay:`${i*.15}s`, display: "flex", flexDirection: "column" }}
-              >
-                <div style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(3.5rem, 6vw, 5rem)", color:"#FCCD97", opacity: 0.2, lineHeight:0.5, marginBottom: 24 }}>&ldquo;</div>
-                <p style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.1rem,1.8vw,1.3rem)", fontWeight:300, fontStyle:"italic", color:"#F9F4EE", lineHeight:1.7, flex:1, paddingLeft: 12, borderLeft: "1px solid rgba(252,205,151,0.15)" }}>
-                  {t.text}
-                </p>
-                <div style={{ paddingLeft: 12, marginTop: 32 }}>
-                  <span style={{ fontSize:".9rem", fontWeight:500, letterSpacing: ".1em", color:"#F9F4EE", display:"block", marginBottom: 6, textTransform: "uppercase" }}>{t.name}</span>
-                  <span style={{ fontSize:".75rem", color:"rgba(249,244,238,.4)", display:"block", letterSpacing: ".05em" }}>{t.event} &nbsp;·&nbsp; {t.location}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSection />
 
       {/* ── PARALLAX CTA ─────────────────────────────────────── */}
       <section id="cta-section" style={{ position:"relative", minHeight: "clamp(420px, 60vw, 490px)", overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>

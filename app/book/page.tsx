@@ -19,16 +19,31 @@ function BookingForm() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/categories").then(r=>r.json()).then((cats:Category[]) => {
-      if (cancelled) return;
-      setCategories(cats);
-      setForm(f => {
-        if (f.category) return f;
-        const matched = cats.find(c=>c.slug===preCategory||c.name===preCategory);
-        return matched ? {...f, category: matched.name} : f;
+    fetch("/api/categories")
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok || !Array.isArray(data)) {
+          throw new Error(typeof data?.error === "string" ? data.error : "Failed to load categories");
+        }
+        return data as Category[];
+      })
+      .then((cats) => {
+        if (cancelled) return;
+        setCategories(cats);
+        setForm((f) => {
+          if (f.category) return f;
+          const matched = cats.find(
+            (c) => c.slug === preCategory || c.name === preCategory
+          );
+          return matched ? { ...f, category: matched.name } : f;
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setCategories([]);
       });
-    }).catch(()=>{});
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [preCategory]);
 
   async function handleSubmit(e:React.FormEvent) {
@@ -55,6 +70,7 @@ function BookingForm() {
         <h2 style={{ fontFamily:"var(--font-cormorant),serif", fontSize:"clamp(1.6rem,3vw,2rem)", fontWeight:400, color:"#F9F4EE", marginBottom:12 }}>Booking Received!</h2>
         <p style={{ color:"rgba(249,244,238,.5)", marginBottom:28, fontSize:".88rem", lineHeight:1.7 }}>
           Thank you for choosing Regal Event London. Our team will be in touch within 24 hours.
+          A confirmation email has been sent to the address you provided — please check your inbox and spam folder.
         </p>
         <div style={{ background:"rgba(1,89,97,.15)", border:"1px solid rgba(252,205,151,.2)", padding:"20px 24px", marginBottom:28 }}>
           <p style={{ fontSize:".65rem", letterSpacing:".2em", textTransform:"uppercase", color:"rgba(249,244,238,.4)", marginBottom:8 }}>Your Booking ID</p>
@@ -122,9 +138,9 @@ function BookingForm() {
               <input type="number" min="1" placeholder="Approximate number" value={form.guests} onChange={set("guests")} className="lux-input" />
             </div>
             <div>
-              <label className="lux-label">Budget Range</label>
+              <label className="lux-label">Estimated budget</label>
               <select value={form.budget} onChange={set("budget")} className="lux-input" style={{ cursor:"pointer" }}>
-                <option value="">Select budget</option>
+                <option value="">Select estimated budget</option>
                 {["Under £500","£500 – £1,000","£1,000 – £2,500","£2,500 – £5,000","£5,000+"].map(b=>(
                   <option key={b}>{b}</option>
                 ))}
