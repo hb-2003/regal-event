@@ -1,8 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import SettingsImagePreview from "@/components/admin/SettingsImagePreview";
 import {
   DEFAULT_SOCIAL_LINKS,
+  HOME_HERO_IMAGE_COUNT,
+  normalizeHomeHeroImages,
+  parseHomeHeroImages,
   parseSiteContact,
   type SocialLink,
 } from "@/lib/site-settings";
@@ -32,13 +35,16 @@ export default function AdminSettingsPage() {
   const [msgError, setMsgError] = useState(false);
 
   const [aboutHeroImage, setAboutHeroImage] = useState("");
-  const [homeHeroImages, setHomeHeroImages] = useState<string[]>(Array(5).fill(""));
+  const [homeHeroImages, setHomeHeroImages] = useState<string[]>(() =>
+    Array.from({ length: HOME_HERO_IMAGE_COUNT }, () => "")
+  );
   const [contactAddress, setContactAddress] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactHours, setContactHours] = useState("");
   const [footerTagline, setFooterTagline] = useState("");
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>(DEFAULT_SOCIAL_LINKS);
+  const [uploadingSlot, setUploadingSlot] = useState<number | "about" | null>(null);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -52,42 +58,85 @@ export default function AdminSettingsPage() {
         setFooterTagline(contact.tagline);
         setSocialLinks(contact.socialLinks);
 
-        if (data.about_hero_image) setAboutHeroImage(data.about_hero_image);
-        if (data.home_hero_images) {
-          try {
-            const parsed = JSON.parse(data.home_hero_images);
-            if (Array.isArray(parsed) && parsed.length === 5) {
-              setHomeHeroImages(parsed);
-            }
-          } catch (e) {
-            console.error("Failed to parse home_hero_images", e);
-          }
-        }
+        if (data.about_hero_image) setAboutHeroImage(String(data.about_hero_image));
+        setHomeHeroImages(parseHomeHeroImages(data.home_hero_images));
       })
       .finally(() => setLoading(false));
   }, []);
 
   const handleHomeHeroImageChange = (index: number, url: string) => {
-    const newImages = [...homeHeroImages];
-    newImages[index] = url;
-    setHomeHeroImages(newImages);
+    setHomeHeroImages((prev) => {
+      const next = normalizeHomeHeroImages(prev);
+      next[index] = url;
+      return next;
+    });
   };
 
-  const handleUpload = async (file: File, type: "about" | "home", index?: number) => {
+  async function persistImageSettings(patch: {
+    home_hero_images?: string[];
+    about_hero_image?: string;
+  }) {
+    const res = await fetch("/api/settings", {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error((err as { error?: string }).error || "Failed to save image");
+    }
+  }
+
+  const handleUpload = async (
+    file: File,
+    type: "about" | "home",
+    index?: number,
+    input?: HTMLInputElement | null
+  ) => {
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("folder", "gallery");
+
+    setUploadingSlot(type === "about" ? "about" : index ?? null);
+    setMsg("");
+    setMsgError(false);
 
     try {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
-      if (type === "about") setAboutHeroImage(data.url);
-      else if (type === "home" && index !== undefined) {
-        handleHomeHeroImageChange(index, data.url);
+      const path =
+        typeof data.path === "string"
+          ? data.path
+          : typeof data.url === "string"
+            ? data.url
+            : "";
+      if (!path) throw new Error("Upload succeeded but no image path was returned.");
+
+      if (type === "about") {
+        setAboutHeroImage(path);
+        await persistImageSettings({ about_hero_image: path });
+        setMsg("About hero image uploaded and saved.");
+      } else if (index !== undefined) {
+        let next: string[] = [];
+        setHomeHeroImages((prev) => {
+          next = normalizeHomeHeroImages(prev);
+          next[index] = path;
+          return next;
+        });
+        await persistImageSettings({ home_hero_images: next });
+        setMsg(`Mosaic image ${index + 1} uploaded and saved.`);
       }
+
+      if (input) input.value = "";
+      setTimeout(() => setMsg(""), 4000);
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to upload image.");
+      setMsgError(true);
+      setMsg(err instanceof Error ? err.message : "Failed to upload image.");
+    } finally {
+      setUploadingSlot(null);
     }
   };
 
@@ -99,6 +148,7 @@ export default function AdminSettingsPage() {
     try {
       const res = await fetch("/api/settings", {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contact_address: contactAddress,
@@ -108,7 +158,7 @@ export default function AdminSettingsPage() {
           footer_tagline: footerTagline,
           social_links: socialLinks,
           about_hero_image: aboutHeroImage,
-          home_hero_images: homeHeroImages,
+          home_hero_images: normalizeHomeHeroImages(homeHeroImages),
         }),
       });
 
@@ -350,12 +400,7 @@ export default function AdminSettingsPage() {
                 style={{ backgroundColor: "#F9F4EE", border: "1px solid #EDE5D8" }}
               >
                 {aboutHeroImage ? (
-                  <Image
-                    src={aboutHeroImage}
-                    alt="About hero"
-                    fill
-                    style={{ objectFit: "cover" }}
-                  />
+                  <SettingsImagePreview src={aboutHeroImage} alt="About hero" />
                 ) : (
                   <div
                     className="absolute inset-0 flex items-center justify-center text-sm"
@@ -383,8 +428,9 @@ export default function AdminSettingsPage() {
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) handleUpload(file, "about");
+                  if (file) handleUpload(file, "about", undefined, e.target);
                 }}
+                disabled={uploadingSlot === "about"}
                 className={fileInputClass}
               />
               <p className="text-xs mt-3" style={{ color: "#888" }}>
@@ -402,7 +448,8 @@ export default function AdminSettingsPage() {
             Home page mosaic images
           </h2>
           <p className="text-xs sm:text-sm mb-6" style={{ color: "#888" }}>
-            These 5 images form the animated mosaic collage on the home page hero.
+            These 5 images form the animated mosaic collage on the home page hero. Each upload
+            saves automatically — refresh the home page to see changes.
           </p>
 
           <div className="space-y-4">
@@ -416,12 +463,11 @@ export default function AdminSettingsPage() {
                   className="w-24 h-24 relative rounded-lg overflow-hidden shrink-0"
                   style={{ backgroundColor: "#EDE5D8", border: "1px solid #EDE5D8" }}
                 >
-                  {imgUrl ? (
-                    <Image
+                  {imgUrl?.trim() ? (
+                    <SettingsImagePreview
                       src={imgUrl}
                       alt={`Mosaic ${i + 1}`}
-                      fill
-                      style={{ objectFit: "cover" }}
+                      key={imgUrl}
                     />
                   ) : (
                     <div
@@ -438,7 +484,7 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="text"
-                    value={imgUrl}
+                    value={imgUrl ?? ""}
                     onChange={(e) => handleHomeHeroImageChange(i, e.target.value)}
                     className={inputClass}
                     style={inputStyle}
@@ -453,8 +499,9 @@ export default function AdminSettingsPage() {
                     accept="image/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) handleUpload(file, "home", i);
+                      if (file) handleUpload(file, "home", i, e.target);
                     }}
+                    disabled={uploadingSlot === i}
                     className={fileInputClass}
                   />
                 </div>

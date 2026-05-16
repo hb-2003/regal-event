@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/auth";
 import {
   ALL_SETTING_KEYS,
   CONTACT_SETTING_KEYS,
+  normalizeHomeHeroImages,
   serializeSocialLinks,
   type SettingKey,
 } from "@/lib/site-settings";
@@ -39,10 +40,11 @@ function serializeSettingValue(
           })()
         : null;
 
-    if (!Array.isArray(images) || images.length !== 5) return null;
-    if (!images.every((u) => typeof u === "string" && u.trim())) return null;
+    if (!Array.isArray(images)) return null;
 
-    return JSON.stringify(images.map((u) => String(u).trim().slice(0, 2000)));
+    return JSON.stringify(
+      normalizeHomeHeroImages(images).map((u) => u.trim().slice(0, 2000))
+    );
   }
 
   if (key === "social_links") {
@@ -66,7 +68,9 @@ export async function GET() {
     settings[row.key] = row.value;
   }
 
-  return NextResponse.json(settings);
+  return NextResponse.json(settings, {
+    headers: { "Cache-Control": "no-store, max-age=0" },
+  });
 }
 
 export async function PATCH(request: NextRequest) {

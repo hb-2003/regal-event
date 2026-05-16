@@ -5,7 +5,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from "typeorm";
-import { Gallery } from "./Gallery.entity";
+import type { Gallery } from "./Gallery.entity";
 
 @Entity("gallery_images")
 export class GalleryImage {
@@ -15,7 +15,13 @@ export class GalleryImage {
   @Column({ name: "gallery_id" })
   gallery_id!: number;
 
-  @ManyToOne(() => Gallery, { onDelete: "CASCADE" })
+  @ManyToOne(
+    () =>
+      // Lazy require avoids Gallery ↔ GalleryImage circular init in bundled builds
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("./Gallery.entity").Gallery as typeof import("./Gallery.entity").Gallery,
+    { onDelete: "CASCADE" }
+  )
   @JoinColumn({ name: "gallery_id" })
   gallery!: Gallery;
 

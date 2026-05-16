@@ -17,6 +17,44 @@ export const CONTACT_SETTING_KEYS = [
 
 export const IMAGE_SETTING_KEYS = ["home_hero_images", "about_hero_image"] as const;
 
+export const HOME_HERO_IMAGE_COUNT = 5;
+
+/** Ensure exactly 5 string URLs (empty string when missing). */
+export function normalizeHomeHeroImages(raw: unknown): string[] {
+  const slots = Array.from({ length: HOME_HERO_IMAGE_COUNT }, () => "");
+  if (!Array.isArray(raw)) return slots;
+  for (let i = 0; i < HOME_HERO_IMAGE_COUNT; i++) {
+    const v = raw[i];
+    slots[i] = v == null ? "" : String(v);
+  }
+  return slots;
+}
+
+export function parseHomeHeroImages(raw: string | undefined): string[] {
+  if (!raw?.trim()) {
+    return Array.from({ length: HOME_HERO_IMAGE_COUNT }, () => "");
+  }
+  try {
+    return normalizeHomeHeroImages(JSON.parse(raw));
+  } catch {
+    return Array.from({ length: HOME_HERO_IMAGE_COUNT }, () => "");
+  }
+}
+
+/** Home mosaic: use saved uploads when present, otherwise fall back to defaults. */
+export function resolveHomeMosaicImages(
+  raw: string | undefined,
+  defaults: readonly string[]
+): string[] {
+  const slots = parseHomeHeroImages(raw);
+  const hasCustom = slots.some((src) => src.trim().length > 0);
+  if (!hasCustom) return [...defaults];
+  return slots.map((src, i) => {
+    const trimmed = src.trim();
+    return trimmed || defaults[i] || defaults[0];
+  });
+}
+
 export const ALL_SETTING_KEYS = [
   ...IMAGE_SETTING_KEYS,
   ...CONTACT_SETTING_KEYS,

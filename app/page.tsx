@@ -10,6 +10,7 @@ import Manifesto from "@/components/Manifesto";
 import Showreel from "@/components/Showreel";
 import CategoryShowcase from "@/components/CategoryShowcase";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import { resolveHomeMosaicImages } from "@/lib/site-settings";
 
 type Category = { id: number; name: string; slug: string; description: string; image: string | null };
 type GalleryItem = { id: number; image_path: string; title: string };
@@ -52,18 +53,12 @@ export default function HomePage() {
       .finally(() => setCategoriesLoading(false));
     fetch("/api/gallery").then(r=>r.json()).then(d=>setGallery(d.slice(0,9))).catch(()=>{});
 
-    fetch("/api/settings").then(r=>r.json()).then(d=>{
-      if (d.home_hero_images) {
-        try {
-          const parsed = JSON.parse(d.home_hero_images);
-          if (Array.isArray(parsed) && parsed.length === 5) {
-            setMosaicImgs(parsed);
-          }
-        } catch (e) {
-          console.error("Failed to parse home_hero_images");
-        }
-      }
-    }).catch(()=>{});
+    fetch("/api/settings", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => {
+        setMosaicImgs(resolveHomeMosaicImages(d.home_hero_images, DEFAULT_MOSAIC));
+      })
+      .catch(() => {});
   }, []);
 
   // Mosaic mousemove — optimized with GSAP for Awwwards-level smoothness
@@ -220,8 +215,24 @@ export default function HomePage() {
           <div className="hero-mosaic-wrap">
             <div ref={mosaicRef} className="hero-mosaic">
               {mosaicImgs.map((src, i) => (
-                <div key={i} className={`mosaic-pic mosaic-p${i+1}`}>
-                  <Image src={src} alt="Regal Event Portfolio" fill style={{ objectFit: "cover" }} sizes="(max-width: 1024px) 0vw, 33vw" priority={i < 2} />
+                <div key={`${i}-${src}`} className={`mosaic-pic mosaic-p${i + 1}`}>
+                  {src.startsWith("/uploads/") ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={src}
+                      alt="Regal Event Portfolio"
+                      style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                    />
+                  ) : (
+                    <Image
+                      src={src}
+                      alt="Regal Event Portfolio"
+                      fill
+                      style={{ objectFit: "cover" }}
+                      sizes="(max-width: 1024px) 0vw, 33vw"
+                      priority={i < 2}
+                    />
+                  )}
                 </div>
               ))}
             </div>
