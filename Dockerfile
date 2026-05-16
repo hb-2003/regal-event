@@ -12,36 +12,40 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Disable telemetry during build
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# Production image, copy all the files and run next
+# One-shot migration runner (used by docker compose `migrate` service)
+FROM base AS migrator
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci
+COPY migrations ./migrations
+COPY src/server/database ./src/server/database
+COPY tsconfig.json tsconfig.migration.json ./
+ENV NODE_ENV=production
+CMD ["npm", "run", "migration:run"]
+
+# Production image — Next.js standalone only (migrations run via `migrate` service)
 FROM base AS runner
 WORKDIR /app
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Set the correct permission for prerender cache
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
 
-# Copy required files
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/migrations ./migrations
-COPY --from=builder /app/src/server/database ./src/server/database
 
 USER nextjs
 
 EXPOSE 3000
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-# Run migrations before deploy: npm run migration:run (from CI or host with DATABASE_URL)
 CMD ["node", "server.js"]
