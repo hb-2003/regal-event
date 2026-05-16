@@ -7,8 +7,22 @@ export type StoredImage = {
   path: string;
 };
 
-function useBlobStorage(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+/** Bracket access so Next.js does not inline `undefined` at build when the var is added later. */
+function getBlobToken(): string | undefined {
+  const token = process.env["BLOB_READ_WRITE_TOKEN"]?.trim();
+  return token || undefined;
+}
+
+function isVercelRuntime(): boolean {
+  return process.env.VERCEL === "1" || Boolean(process.env.VERCEL_ENV);
+}
+
+function blobOptions(token: string | undefined) {
+  return {
+    access: "public" as const,
+    addRandomSuffix: false,
+    ...(token ? { token } : {}),
+  };
 }
 
 export async function storeUploadedImage(
@@ -17,19 +31,22 @@ export async function storeUploadedImage(
   fileName: string
 ): Promise<StoredImage> {
   const key = `${folder}/${fileName}`;
+  const onVercel = isVercelRuntime();
+  const token = getBlobToken();
 
-  if (useBlobStorage()) {
-    const blob = await put(key, buffer, {
-      access: "public",
-      addRandomSuffix: false,
-    });
-    return { path: blob.url };
-  }
-
-  if (process.env.VERCEL) {
-    throw new Error(
-      "File uploads on Vercel require Vercel Blob. Add BLOB_READ_WRITE_TOKEN in Project → Storage → Blob, or link a Blob store to this project."
-    );
+  if (onVercel || token) {
+    try {
+      const blob = await put(key, buffer, blobOptions(token));
+      return { path: blob.url };
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      if (onVercel && !token) {
+        throw new Error(
+          `Vercel Blob upload failed (${detail}). In Vercel: Storage → Blob → link store to this project, confirm BLOB_READ_WRITE_TOKEN is set for Production, then redeploy.`
+        );
+      }
+      throw new Error(`Vercel Blob upload failed: ${detail}`);
+    }
   }
 
   const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
@@ -47,10 +64,11 @@ export async function deleteStoredImageIfExists(
   if (!p) return;
 
   if (p.startsWith("https://")) {
-    if (!useBlobStorage()) return;
+    if (!isVercelRuntime() && !getBlobToken()) return;
     try {
       const { del } = await import("@vercel/blob");
-      await del(p);
+      const token = getBlobToken();
+      await del(p, token ? { token } : {});
     } catch (err) {
       console.error("[media] blob delete failed", err);
     }
