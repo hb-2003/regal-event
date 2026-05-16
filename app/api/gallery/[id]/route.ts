@@ -10,6 +10,7 @@ import {
   findGalleryImagesByGalleryId,
   withGalleryImages,
 } from "@/lib/gallery-images";
+import { isAllowedImagePath } from "@/lib/media-path";
 import { unlinkUploadIfExists } from "@/lib/gallery-files";
 import { Gallery } from "@/server/database/entities/Gallery.entity";
 import { GalleryImage } from "@/server/database/entities/GalleryImage.entity";
@@ -44,7 +45,7 @@ function parsePatchFields(body: Record<string, unknown>) {
   }
   if (body.image_path !== undefined) {
     const image_path = String(body.image_path).trim();
-    if (!image_path.startsWith("/uploads/")) {
+    if (!isAllowedImagePath(image_path)) {
       return { error: "Invalid image_path" as const };
     }
     fields.image_path = image_path;
@@ -89,7 +90,7 @@ function parsePatchFields(body: Record<string, unknown>) {
     fields.extra_images = Array.isArray(body.extra_images)
       ? body.extra_images
           .map((x) => String(x).trim())
-          .filter((p) => p.startsWith("/uploads/"))
+          .filter((p) => isAllowedImagePath(p))
           .slice(0, 12)
       : [];
   }

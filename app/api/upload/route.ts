@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
-import path from "path";
-import fs from "fs";
+import { storeUploadedImage } from "@/lib/media-storage";
 import crypto from "crypto";
 
 const ALLOWED_MIME: Record<string, string> = {
@@ -14,7 +13,6 @@ const ALLOWED_MIME: Record<string, string> = {
 const ALLOWED_FOLDERS = new Set(["gallery", "categories"]);
 const MAX_BYTES = 5 * 1024 * 1024;
 
-// Magic-byte sniff so a spoofed Content-Type can't sneak past
 function sniffMime(buf: Buffer): string | null {
   if (buf.length < 12) return null;
   if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
@@ -35,41 +33,43 @@ export async function POST(request: NextRequest) {
   const auth = requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
-  const formData = await request.formData();
-  const file = formData.get("file") as File | null;
-  const folderRaw = (formData.get("folder") as string) || "gallery";
-  const folder = ALLOWED_FOLDERS.has(folderRaw) ? folderRaw : "gallery";
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file") as File | null;
+    const folderRaw = (formData.get("folder") as string) || "gallery";
+    const folder = ALLOWED_FOLDERS.has(folderRaw) ? folderRaw : "gallery";
 
-  if (!file)
-    return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
+    }
 
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json(
-      { error: "File too large (max 5MB)" },
-      { status: 400 }
-    );
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json(
+        { error: "File too large (max 5MB)" },
+        { status: 400 }
+      );
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const sniffed = sniffMime(buffer);
+    if (!sniffed || !ALLOWED_MIME[sniffed]) {
+      return NextResponse.json(
+        { error: "Unsupported image type" },
+        { status: 400 }
+      );
+    }
+
+    const ext = ALLOWED_MIME[sniffed];
+    const fileName = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
+    const stored = await storeUploadedImage(buffer, folder, fileName);
+
+    return NextResponse.json({
+      success: true,
+      path: stored.path,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Upload failed";
+    console.error("[upload]", err);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const sniffed = sniffMime(buffer);
-  if (!sniffed || !ALLOWED_MIME[sniffed]) {
-    return NextResponse.json(
-      { error: "Unsupported image type" },
-      { status: 400 }
-    );
-  }
-
-  const ext = ALLOWED_MIME[sniffed];
-  const fileName = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`;
-  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
-
-  if (!fs.existsSync(uploadDir))
-    fs.mkdirSync(uploadDir, { recursive: true });
-
-  fs.writeFileSync(path.join(uploadDir, fileName), buffer);
-
-  return NextResponse.json({
-    success: true,
-    path: `/uploads/${folder}/${fileName}`,
-  });
 }

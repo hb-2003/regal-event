@@ -28,6 +28,20 @@ const sectionStyle = {
 const fileInputClass =
   "block w-full rounded-lg border border-[#EDE5D8] bg-[#F9F4EE] px-3 py-3 text-sm text-[#333] file:mr-4 file:rounded-lg file:border-0 file:bg-[#015961] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#FCCD97] hover:file:bg-[#012D32] cursor-pointer";
 
+async function readJsonResponse<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text.trim()) {
+    throw new Error(res.ok ? "Empty response from server" : `Request failed (${res.status})`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      res.ok ? "Invalid response from server" : `Request failed (${res.status}): ${text.slice(0, 120)}`
+    );
+  }
+}
+
 export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,8 +97,8 @@ export default function AdminSettingsPage() {
       body: JSON.stringify(patch),
     });
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error((err as { error?: string }).error || "Failed to save image");
+      const err = await readJsonResponse<{ error?: string }>(res);
+      throw new Error(err.error || "Failed to save image");
     }
   }
 
@@ -103,8 +117,12 @@ export default function AdminSettingsPage() {
     setMsgError(false);
 
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      const data = await readJsonResponse<{ error?: string; path?: string; url?: string }>(res);
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
       const path =
@@ -163,10 +181,8 @@ export default function AdminSettingsPage() {
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(
-          (err as { error?: string }).error || "Failed to save settings"
-        );
+        const err = await readJsonResponse<{ error?: string }>(res);
+        throw new Error(err.error || "Failed to save settings");
       }
 
       setMsg("Settings saved successfully.");

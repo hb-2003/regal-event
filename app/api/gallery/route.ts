@@ -7,6 +7,7 @@ import {
   stringifyInclusions,
 } from "@/lib/gallery";
 import { attachGalleryImages, findGalleryImagesByGalleryId, withGalleryImages } from "@/lib/gallery-images";
+import { isAllowedImagePath } from "@/lib/media-path";
 import { Gallery } from "@/server/database/entities/Gallery.entity";
 import { GalleryImage } from "@/server/database/entities/GalleryImage.entity";
 import { requireAdmin } from "@/lib/auth";
@@ -47,7 +48,7 @@ function parseBodyFields(body: Record<string, unknown>) {
   const extra_images = Array.isArray(body.extra_images)
     ? body.extra_images
         .map((x) => String(x).trim())
-        .filter((p) => p.startsWith("/uploads/"))
+        .filter((p) => isAllowedImagePath(p))
         .slice(0, 12)
     : [];
 
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
   if ("error" in fields) {
     return NextResponse.json({ error: fields.error }, { status: 400 });
   }
-  if (!fields.image_path || !fields.image_path.startsWith("/uploads/")) {
+  if (!fields.image_path || !isAllowedImagePath(fields.image_path)) {
     return NextResponse.json({ error: "Invalid image_path" }, { status: 400 });
   }
 

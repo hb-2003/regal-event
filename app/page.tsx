@@ -10,6 +10,7 @@ import Manifesto from "@/components/Manifesto";
 import Showreel from "@/components/Showreel";
 import CategoryShowcase from "@/components/CategoryShowcase";
 import TestimonialsSection from "@/components/TestimonialsSection";
+import { isLocalUploadPath, isRemoteImagePath } from "@/lib/media-path";
 import { resolveHomeMosaicImages } from "@/lib/site-settings";
 
 type Category = { id: number; name: string; slug: string; description: string; image: string | null };
@@ -216,7 +217,7 @@ export default function HomePage() {
             <div ref={mosaicRef} className="hero-mosaic">
               {mosaicImgs.map((src, i) => (
                 <div key={`${i}-${src}`} className={`mosaic-pic mosaic-p${i + 1}`}>
-                  {src.startsWith("/uploads/") ? (
+                  {isLocalUploadPath(src) || isRemoteImagePath(src) ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={src}

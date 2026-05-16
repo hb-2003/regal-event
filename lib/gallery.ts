@@ -1,3 +1,4 @@
+import { isAllowedImagePath } from "@/lib/media-path";
 import type { Gallery } from "@/server/database/entities/Gallery.entity";
 import type { GalleryImage } from "@/server/database/entities/GalleryImage.entity";
 
@@ -89,7 +90,7 @@ export function serializeGalleryPackage(
 
 export function allGalleryImagePaths(pkg: GalleryPackageDto): string[] {
   const paths = [pkg.image_path, ...pkg.images.map((i) => i.image_path)];
-  return [...new Set(paths.filter((p) => p.startsWith("/uploads/")))];
+  return [...new Set(paths.filter((p) => isAllowedImagePath(p)))];
 }
 
 /** Display/storage-friendly UK price (adds £ when admin enters plain numbers). */
