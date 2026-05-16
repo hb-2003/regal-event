@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "npm run migration:run && npm run build",
     "start": "next start",
     "lint": "eslint",
     "migration:generate": "TS_NODE_PROJECT=tsconfig.migration.json node ./node_modules/typeorm/cli-ts-node-commonjs.js migration:generate -d ./src/server/database/migration-datasource.ts",

@@ -106,6 +106,7 @@ Path aliases: `@/*` → repo root; `@/server/*` → `src/server/*`. Prefer `@/li
   ```
 - **Docker production** (`docker compose up`): the `migrate` service runs `npm run migration:run` once before `app` starts. The `app` image is Next.js standalone only — it has no TypeORM CLI and does not run migrations itself.
 - **Non-Docker production** (VPS, etc.): run `npm run migration:run` in CI or on the host **before** `npm run start`, with `DATABASE_URL` set. First deploy only: `npm run db:seed`.
+- **Vercel**: Build logs only show `next build` unless `vercel-build` is used (this repo sets `vercel-build` → `migration:run` then `build`). In Vercel → Settings → Environment Variables, set at least `DATABASE_URL` (hosted Postgres, e.g. Neon/Supabase/Vercel Postgres), `JWT_SECRET`, email vars, and `NEXT_PUBLIC_SITE_URL` for **Production**. First deploy: run `npm run db:seed` once against production DB from your machine. Docker `migrate` service does **not** run on Vercel.
 - If upgrading from the old inline `initSchema` DB, drop/recreate the Postgres volume or baseline the `migrations` table before `migration:run`.
 
 ## Auth (`lib/auth.ts` + `proxy.ts`)
