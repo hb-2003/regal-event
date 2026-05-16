@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import getDb from "@/lib/db";
+import { getRepository } from "@/lib/db";
+import { Video } from "@/server/database/entities/Video.entity";
 import { requireAdmin } from "@/lib/auth";
 
 const YT_RE = /^https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\//i;
 
 export async function GET() {
-  const db = await getDb();
-  const res = await db.execute({ sql: "SELECT * FROM videos ORDER BY created_at DESC LIMIT 200", args: [] });
-  const videos = res.rows.map(row => {
-    const obj: any = {};
-    for (let i = 0; i < res.columns.length; i++) {
-      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
-    }
-    return obj;
+  const repo = await getRepository(Video);
+  const videos = await repo.find({
+    order: { created_at: "DESC" },
+    take: 200,
   });
   return NextResponse.json(videos);
 }
@@ -47,10 +44,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const db = await getDb();
-  await db.execute({
-    sql: "INSERT INTO videos (title, youtube_url, description) VALUES (?, ?, ?)",
-    args: [title, youtube_url, description]
-  });
+  const repo = await getRepository(Video);
+  await repo.save(repo.create({ title, youtube_url, description }));
   return NextResponse.json({ success: true }, { status: 201 });
 }

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import getDb from "@/lib/db";
+import { getRepository } from "@/lib/db";
+import { Booking } from "@/server/database/entities/Booking.entity";
 import { generateBookingId, requireAdmin } from "@/lib/auth";
 import {
   sendBookingConfirmationToClient,
   sendBookingAlertToAdmin,
 } from "@/lib/email";
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function escapeLike(s: string) {
@@ -16,40 +16,28 @@ export async function GET(request: NextRequest) {
   const auth = requireAdmin(request);
   if (auth instanceof NextResponse) return auth;
 
-  const db = await getDb();
+  const repo = await getRepository(Booking);
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const search = searchParams.get("search");
 
-  let query = "SELECT * FROM bookings";
-  const params: (string | number)[] = [];
-  const conditions: string[] = [];
+  const qb = repo
+    .createQueryBuilder("booking")
+    .orderBy("booking.created_at", "DESC")
+    .take(500);
 
   if (status && status !== "all") {
-    conditions.push("status = ?");
-    params.push(status);
+    qb.andWhere("booking.status = :status", { status });
   }
   if (search) {
-    const safe = `%${escapeLike(search)}%`;
-    conditions.push(
-      "(full_name LIKE ? ESCAPE '\\' OR booking_id LIKE ? ESCAPE '\\' OR email LIKE ? ESCAPE '\\')"
+    const pattern = `%${escapeLike(search)}%`;
+    qb.andWhere(
+      "(booking.full_name ILIKE :pattern ESCAPE '\\' OR booking.booking_id ILIKE :pattern ESCAPE '\\' OR booking.email ILIKE :pattern ESCAPE '\\')",
+      { pattern }
     );
-    params.push(safe, safe, safe);
   }
-  if (conditions.length) query += " WHERE " + conditions.join(" AND ");
-  query += " ORDER BY created_at DESC LIMIT 500";
 
-  const res = await db.execute({ sql: query, args: params });
-
-  // Transform rows from @libsql/client
-  const bookings = res.rows.map(row => {
-    const obj: Record<string, any> = {};
-    for (let i = 0; i < res.columns.length; i++) {
-      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
-    }
-    return obj;
-  });
-
+  const bookings = await qb.getMany();
   return NextResponse.json(bookings);
 }
 
@@ -88,15 +76,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid guest count" }, { status: 400 });
   }
 
-  const db = await getDb();
   const booking_id = generateBookingId();
-
-  await db.execute({
-    sql: `
-    INSERT INTO bookings (booking_id, full_name, phone, email, event_date, category, venue, guests, budget, notes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `,
-    args: [
+  const repo = await getRepository(Booking);
+  await repo.save(
+    repo.create({
       booking_id,
       full_name,
       phone,
@@ -106,9 +89,9 @@ export async function POST(request: NextRequest) {
       venue,
       guests,
       budget,
-      notes
-    ]
-  });
+      notes,
+    })
+  );
 
   try {
     await sendBookingConfirmationToClient({

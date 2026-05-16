@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: regaladmin
+      POSTGRES_PASSWORD: regalpassword
+      POSTGRES_DB: regal_events
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://regaladmin:regalpassword@db:5432/regal_events
+      - JWT_SECRET=your-very-secure-jwt-secret-key-12345
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin123
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USER=your@gmail.com
+      - EMAIL_PASS=your-app-password
+      - EMAIL_FROM=Regal Event London <noreply@regalevent.co.uk>
+      - ADMIN_EMAIL=admin@regalevent.co.uk
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+    depends_on:
+      - db
+    # Before first run (from host, with DATABASE_URL pointing at this db):
+    #   npm run migration:run && npm run db:seed
+    # Generate new migrations:
+    #   npm run migration:generate -- ./migrations/DescriptiveName
+
+volumes:
+  pgdata:

@@ -1,30 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import getDb from "@/lib/db";
+import { getRepository } from "@/lib/db";
+import { Gallery } from "@/server/database/entities/Gallery.entity";
 import { requireAdmin } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
-  const db = await getDb();
+  const repo = await getRepository(Gallery);
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
 
-  const res =
+  const rows =
     category && category !== "all"
-      ? await db.execute({
-          sql: "SELECT * FROM gallery WHERE category = ? ORDER BY sort_order ASC, created_at DESC LIMIT 500",
-          args: [category]
+      ? await repo.find({
+          where: { category },
+          order: { sort_order: "ASC", created_at: "DESC" },
+          take: 500,
         })
-      : await db.execute({
-          sql: "SELECT * FROM gallery ORDER BY sort_order ASC, created_at DESC LIMIT 500",
-          args: []
+      : await repo.find({
+          order: { sort_order: "ASC", created_at: "DESC" },
+          take: 500,
         });
-
-  const rows = res.rows.map(row => {
-    const obj: any = {};
-    for (let i = 0; i < res.columns.length; i++) {
-      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
-    }
-    return obj;
-  });
 
   return NextResponse.json(rows);
 }
@@ -49,15 +43,13 @@ export async function POST(request: NextRequest) {
     ? Math.floor(Number(body.sort_order))
     : 0;
 
-  // Only allow paths the upload endpoint produces
   if (!image_path || !image_path.startsWith("/uploads/")) {
     return NextResponse.json({ error: "Invalid image_path" }, { status: 400 });
   }
 
-  const db = await getDb();
-  await db.execute({
-    sql: "INSERT INTO gallery (title, category, image_path, sort_order) VALUES (?, ?, ?, ?)",
-    args: [title, category, image_path, sort_order]
-  });
+  const repo = await getRepository(Gallery);
+  await repo.save(
+    repo.create({ title, category, image_path, sort_order })
+  );
   return NextResponse.json({ success: true }, { status: 201 });
 }

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import getDb from "@/lib/db";
+import { getRepository } from "@/lib/db";
+import { Admin } from "@/server/database/entities/Admin.entity";
 import bcrypt from "bcryptjs";
 import { signToken } from "@/lib/auth";
-
-type Admin = { id: number; username: string; password: string };
 
 // Per-IP login rate limit: 8 attempts / 15 minutes
 const buckets = new Map<string, { count: number; reset: number }>();
@@ -48,17 +47,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  const db = await getDb();
-  const res = await db.execute({ sql: "SELECT * FROM admins WHERE username = ?", args: [username] });
-  let admin: Admin | undefined;
-  if (res.rows.length > 0) {
-    const row = res.rows[0];
-    const obj: any = {};
-    for (let i = 0; i < res.columns.length; i++) {
-      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
-    }
-    admin = obj as Admin;
-  }
+  const adminRepo = await getRepository(Admin);
+  const admin = await adminRepo.findOneBy({ username });
 
   // Always run bcrypt to prevent username-enumeration via timing
   const hashToCheck =

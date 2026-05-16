@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["better-sqlite3"],
+  output: "standalone",
+  serverExternalPackages: ["pg", "typeorm", "reflect-metadata"],
+  outputFileTracingExcludes: {
+    "*": ["./migrations/**/*"],
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "img.youtube.com" },

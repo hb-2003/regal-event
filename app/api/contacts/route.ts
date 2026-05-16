@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import getDb from "@/lib/db";
+import { getRepository } from "@/lib/db";
+import { Contact } from "@/server/database/entities/Contact.entity";
 import { sendContactAlertToAdmin } from "@/lib/email";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,11 +56,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   }
 
-  const db = await getDb();
-  await db.execute({
-    sql: "INSERT INTO contacts (full_name, email, phone, message) VALUES (?, ?, ?, ?)",
-    args: [full_name, email, phone, message]
-  });
+  const repo = await getRepository(Contact);
+  await repo.save(repo.create({ full_name, email, phone, message }));
 
   try {
     await sendContactAlertToAdmin({

@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import getDb from "@/lib/db";
+import { getRepository } from "@/lib/db";
+import { Category } from "@/server/database/entities/Category.entity";
 import { requireAdmin } from "@/lib/auth";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 export async function GET() {
-  const db = await getDb();
-  const res = await db.execute({ sql: "SELECT * FROM categories ORDER BY sort_order ASC", args: [] });
-  const categories = res.rows.map(row => {
-    const obj: any = {};
-    for (let i = 0; i < res.columns.length; i++) {
-      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
-    }
-    return obj;
-  });
+  const repo = await getRepository(Category);
+  const categories = await repo.find({ order: { sort_order: "ASC" } });
   return NextResponse.json(categories);
 }
 
@@ -48,10 +42,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid slug" }, { status: 400 });
   }
 
-  const db = await getDb();
-  await db.execute({
-    sql: "INSERT INTO categories (name, slug, description, image, sort_order) VALUES (?, ?, ?, ?, ?)",
-    args: [name, slug, description, image, sort_order]
-  });
+  const repo = await getRepository(Category);
+  await repo.save(
+    repo.create({ name, slug, description, image, sort_order })
+  );
   return NextResponse.json({ success: true }, { status: 201 });
 }

@@ -34,7 +34,7 @@ const placeholderCats = [
   { id:5, name:"Intimate Celebrations", slug:"celebrations", description:"Bespoke milestones curated with warmth.", image:null },
 ];
 
-const mosaicImgs = [
+const DEFAULT_MOSAIC = [
   "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=600&q=80",
   "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=600&q=80",
   "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80",
@@ -46,6 +46,7 @@ export default function HomePage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [mosaicImgs, setMosaicImgs] = useState<string[]>(DEFAULT_MOSAIC);
 
   const heroRef = useRef<HTMLElement>(null);
   const mosaicRef = useRef<HTMLDivElement>(null);
@@ -58,6 +59,19 @@ export default function HomePage() {
   useEffect(() => {
     fetch("/api/categories").then(r=>r.json()).then(d=>setCategories(d.slice(0,6))).catch(()=>{});
     fetch("/api/gallery").then(r=>r.json()).then(d=>setGallery(d.slice(0,9))).catch(()=>{});
+
+    fetch("/api/settings").then(r=>r.json()).then(d=>{
+      if (d.home_hero_images) {
+        try {
+          const parsed = JSON.parse(d.home_hero_images);
+          if (Array.isArray(parsed) && parsed.length === 5) {
+            setMosaicImgs(parsed);
+          }
+        } catch (e) {
+          console.error("Failed to parse home_hero_images");
+        }
+      }
+    }).catch(()=>{});
   }, []);
 
   // Mosaic mousemove — optimized with GSAP for Awwwards-level smoothness

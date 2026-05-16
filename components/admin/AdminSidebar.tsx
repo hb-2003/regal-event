@@ -10,6 +10,7 @@ const links = [
   { href: "/admin/categories", label: "Categories", icon: "✦" },
   { href: "/admin/gallery",   label: "Gallery",   icon: "◇" },
   { href: "/admin/videos",    label: "Videos",    icon: "▶" },
+  { href: "/admin/settings",  label: "Settings",  icon: "⬡" },
 ];
 
 export default function AdminSidebar() {

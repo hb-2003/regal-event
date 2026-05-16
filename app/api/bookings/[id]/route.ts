@@ -1,25 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import getDb from "@/lib/db";
+import { getRepository } from "@/lib/db";
+import { Booking } from "@/server/database/entities/Booking.entity";
 import { sendStatusUpdateToClient } from "@/lib/email";
 import { requireAdmin } from "@/lib/auth";
-
-type Booking = {
-  id: number;
-  booking_id: string;
-  full_name: string;
-  phone: string;
-  email: string;
-  event_date: string;
-  category: string;
-  venue: string;
-  guests: number;
-  budget: string;
-  notes: string;
-  status: string;
-  admin_notes: string;
-  created_at: string;
-  updated_at: string;
-};
 
 const ALLOWED_STATUSES = ["Pending", "Confirmed", "Completed", "Cancelled"] as const;
 type Status = (typeof ALLOWED_STATUSES)[number];
@@ -35,30 +18,19 @@ export async function GET(
     return NextResponse.json({ error: "Invalid booking id" }, { status: 400 });
   }
 
-  const db = await getDb();
-  const res = await db.execute({ sql: "SELECT * FROM bookings WHERE booking_id = ?", args: [id] });
-  let booking: Booking | undefined;
-  if (res.rows.length > 0) {
-    const row = res.rows[0];
-    const obj: any = {};
-    for (let i = 0; i < res.columns.length; i++) {
-      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
-    }
-    booking = obj as Booking;
-  }
+  const repo = await getRepository(Booking);
+  const booking = await repo.findOneBy({ booking_id: id });
 
   if (!booking) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  // Admins get the full record; public callers get a minimal, less-sensitive view.
   const token = request.cookies.get("admin_token")?.value;
   const isAdmin = token ? requireAdmin(request) : null;
   if (isAdmin && !(isAdmin instanceof NextResponse)) {
     return NextResponse.json(booking);
   }
 
-  // Public/track view: redact phone + email, keep what /track displays
   const { phone: _phone, email: _email, ...publicView } = booking;
   void _phone;
   void _email;
@@ -92,25 +64,15 @@ export async function PATCH(
     ? String(body.admin_notes).slice(0, 2000)
     : null;
 
-  const db = await getDb();
-  const res = await db.execute({ sql: "SELECT * FROM bookings WHERE booking_id = ?", args: [id] });
-  let booking: Booking | undefined;
-  if (res.rows.length > 0) {
-    const row = res.rows[0];
-    const obj: any = {};
-    for (let i = 0; i < res.columns.length; i++) {
-      obj[res.columns[i]] = row[i] ?? row[res.columns[i]];
-    }
-    booking = obj as Booking;
-  }
+  const repo = await getRepository(Booking);
+  const booking = await repo.findOneBy({ booking_id: id });
   if (!booking) {
     return NextResponse.json({ error: "Booking not found" }, { status: 404 });
   }
 
-  await db.execute({
-    sql: "UPDATE bookings SET status = ?, admin_notes = ?, updated_at = datetime('now') WHERE booking_id = ?",
-    args: [status, admin_notes, id]
-  });
+  booking.status = status;
+  booking.admin_notes = admin_notes;
+  await repo.save(booking);
 
   try {
     await sendStatusUpdateToClient({
@@ -140,7 +102,8 @@ export async function DELETE(
   if (!BOOKING_ID_RE.test(id)) {
     return NextResponse.json({ error: "Invalid booking id" }, { status: 400 });
   }
-  const db = await getDb();
-  await db.execute({ sql: "DELETE FROM bookings WHERE booking_id = ?", args: [id] });
+
+  const repo = await getRepository(Booking);
+  await repo.delete({ booking_id: id });
   return NextResponse.json({ success: true });
 }

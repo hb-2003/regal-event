@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import TextReveal from "@/components/TextReveal";
@@ -24,8 +24,18 @@ const values = [
 export default function AboutPage() {
   const badgeRef = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
+  const [heroImage, setHeroImage] = useState("https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=2000&q=80");
 
   useEffect(() => {
+    fetch("/api/settings")
+      .then(res => res.json())
+      .then(data => {
+        if (data.about_hero_image) {
+          setHeroImage(data.about_hero_image);
+        }
+      })
+      .catch(console.error);
+
     const obs = new IntersectionObserver(entries => entries.forEach(e => { if(e.isIntersecting) e.target.classList.add("visible"); }), { threshold:0.15 });
     document.querySelectorAll(".reveal").forEach(el => obs.observe(el));
 
@@ -61,7 +71,7 @@ export default function AboutPage() {
       {/* Page Hero - Cinematic */}
       <div style={{ position: "relative", minHeight: "85vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
         <div style={{ position: "absolute", inset: 0 }}>
-          <Image src="https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=2000&q=80" alt="About Regal Event" fill style={{ objectFit: "cover", filter: "brightness(0.35) sepia(0.2) hue-rotate(-20deg)" }} priority />
+          <Image src={heroImage} alt="About Regal Event" fill style={{ objectFit: "cover", filter: "brightness(0.35) sepia(0.2) hue-rotate(-20deg)" }} priority />
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, #011F23 0%, transparent 60%)" }} />
         </div>
         <div className="container-x" style={{ position: "relative", zIndex: 10, textAlign: "center", paddingTop: 80 }}>

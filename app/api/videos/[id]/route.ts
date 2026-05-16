@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import getDb from "@/lib/db";
+import { getRepository } from "@/lib/db";
+import { Video } from "@/server/database/entities/Video.entity";
 import { requireAdmin } from "@/lib/auth";
 
 const YT_RE = /^https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\//i;
@@ -12,8 +13,8 @@ export async function DELETE(
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const db = await getDb();
-  await db.execute({ sql: "DELETE FROM videos WHERE id = ?", args: [Number(id)] });
+  const repo = await getRepository(Video);
+  await repo.delete(Number(id));
   return NextResponse.json({ success: true });
 }
 
@@ -51,10 +52,7 @@ export async function PATCH(
     );
   }
 
-  const db = await getDb();
-  await db.execute({
-    sql: "UPDATE videos SET title = ?, youtube_url = ?, description = ? WHERE id = ?",
-    args: [title, youtube_url, description, Number(id)]
-  });
+  const repo = await getRepository(Video);
+  await repo.update(Number(id), { title, youtube_url, description });
   return NextResponse.json({ success: true });
 }
