@@ -376,7 +376,6 @@ export default function Footer() {
             {[
               ["Track Booking", "/track"],
               ["Book an Event", "/book"],
-              ["Admin", "/admin/login"],
             ].map(([l, h]) => (
               <Link
                 key={h}
