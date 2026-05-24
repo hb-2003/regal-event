@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import SplitType from "split-type";
 
 interface TextRevealProps {
@@ -21,43 +20,63 @@ export default function TextReveal({
   delay = 0,
 }: TextRevealProps) {
   const textRef = useRef<HTMLSpanElement>(null);
+  const hasPlayed = useRef(false);
 
   useEffect(() => {
     if (!textRef.current) return;
     const triggerEl = textRef.current.parentElement ?? textRef.current;
 
-    // Register ScrollTrigger
-    gsap.registerPlugin(ScrollTrigger);
-
-    // Split the text into lines and words
     const split = new SplitType(textRef.current, { types: "lines,words,chars" });
+    let currentChars = split.chars;
 
-    // Animate the characters
-    const ctx = gsap.context(() => {
-      gsap.from(split.chars, {
-        scrollTrigger: {
-          trigger: triggerEl,
-          start: "top 85%", // Start animation when top of element hits 85% of viewport
-        },
-        y: "100%",
-        opacity: 0,
-        rotateZ: 5,
+    if (!currentChars || currentChars.length === 0) {
+      return () => split.revert();
+    }
+
+    // Set initial hidden state
+    gsap.set(currentChars, { y: "100%", opacity: 0, rotateZ: 5 });
+
+    const playAnimation = () => {
+      if (hasPlayed.current) return;
+      hasPlayed.current = true;
+      gsap.to(currentChars!, {
+        y: 0,
+        opacity: 1,
+        rotateZ: 0,
         duration: 0.8,
         ease: "power4.out",
         stagger: 0.02,
-        delay: delay,
+        delay,
+        overwrite: true,
       });
-    }, textRef);
+    };
 
-    // Re-split on window resize
+    // Use IntersectionObserver — reliable regardless of Lenis/preloader state
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          observer.disconnect();
+          playAnimation();
+        }
+      },
+      { threshold: 0.05, rootMargin: "0px 0px -10% 0px" }
+    );
+    observer.observe(triggerEl);
+
     const handleResize = () => {
+      gsap.killTweensOf(currentChars!);
       split.split({ types: "lines,words,chars" });
+      currentChars = split.chars;
+      if (!hasPlayed.current && currentChars) {
+        gsap.set(currentChars, { y: "100%", opacity: 0, rotateZ: 5 });
+      }
     };
     window.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      ctx.revert();
+      observer.disconnect();
+      gsap.killTweensOf(currentChars!);
       split.revert();
     };
   }, [delay]);
@@ -69,7 +88,7 @@ export default function TextReveal({
   );
   const sharedProps = {
     className,
-    style: { ...style, clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)" },
+    style: { ...style, overflow: "hidden" as const },
   };
 
   switch (Tag) {
