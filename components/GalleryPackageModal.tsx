@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import StoredImage from "@/components/StoredImage";
 import Link from "next/link";
 import {
   formatGalleryPrice,
@@ -52,13 +52,11 @@ export default function GalleryPackageModal({
         <div className="gallery-modal-grid">
           <div className="gallery-modal-media">
             <div className="gallery-modal-main-image">
-              <Image
+              <StoredImage
                 src={slides[activeSlide]}
                 alt={pkg.title || "Event setup"}
                 fill
-                sizes="(max-width: 900px) 100vw, 55vw"
                 style={{ objectFit: "cover" }}
-                priority
               />
             </div>
             {slides.length > 1 && (
@@ -70,7 +68,7 @@ export default function GalleryPackageModal({
                     className={`gallery-modal-thumb${activeSlide === i ? " active" : ""}`}
                     onClick={() => setActiveSlide(i)}
                   >
-                    <Image src={src} alt="" fill sizes="72px" style={{ objectFit: "cover" }} />
+                    <StoredImage src={src} alt="" fill style={{ objectFit: "cover" }} />
                   </button>
                 ))}
               </div>

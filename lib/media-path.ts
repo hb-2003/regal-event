@@ -91,3 +91,16 @@ export function shouldUseNativeImg(value: string): boolean {
     isPrivateBlobUrl(p)
   );
 }
+
+/** Canonical key for comparing stored image paths across proxy, blob URL, and local forms. */
+export function normalizeStoredImagePath(value: string): string {
+  const p = value.trim();
+  if (!p) return "";
+  const blobKey = blobPathnameFromStored(p);
+  if (blobKey) return `blob:${blobKey}`;
+  return p;
+}
+
+export function isSameStoredImagePath(a: string, b: string): boolean {
+  return normalizeStoredImagePath(a) === normalizeStoredImagePath(b);
+}

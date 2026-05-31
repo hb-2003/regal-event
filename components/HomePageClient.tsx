@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { gsap } from "gsap";
+import StoredImage from "@/components/StoredImage";
 import Magnetic from "@/components/Magnetic";
 import TextReveal from "@/components/TextReveal";
 import HeroWebGL from "@/components/HeroWebGL";
@@ -363,7 +364,12 @@ export default function HomePageClient({ initialMosaicImgs }: Props) {
             <div className="gallery-cols">
               {gallery.map((img, i) => (
                 <div key={img.id} className="gal-item" style={{ transitionDelay:`${i*.065}s` }} onClick={() => setLightbox(img.image_path)}>
-                  <Image src={img.image_path} alt={img.title || ""} width={500} height={400} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" style={{ width:"100%", height:"auto", objectFit:"cover" }} />
+                  <StoredImage
+                    src={img.image_path}
+                    alt={img.title || ""}
+                    className="w-full h-auto"
+                    style={{ width: "100%", height: "auto", objectFit: "cover", display: "block" }}
+                  />
                   <div className="gal-veil"><div className="gal-plus">+</div></div>
                 </div>
               ))}

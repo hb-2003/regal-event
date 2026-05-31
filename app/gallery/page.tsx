@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
+import StoredImage from "@/components/StoredImage";
 import GalleryPackageModal from "@/components/GalleryPackageModal";
 import {
   formatGalleryPrice,
@@ -140,13 +140,11 @@ export default function GalleryPage() {
                     role="button"
                     tabIndex={0}
                   >
-                    <Image
+                    <StoredImage
                       src={pkg.image_path}
                       alt={pkg.title || "Event setup"}
-                      width={500}
-                      height={400}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      style={{ width: "100%", height: "auto" }}
+                      className="w-full h-auto"
+                      style={{ width: "100%", height: "auto", display: "block" }}
                     />
                     <div className="gal-veil">
                       <div className="gal-plus">+</div>

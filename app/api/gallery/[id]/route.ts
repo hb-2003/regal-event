@@ -10,7 +10,11 @@ import {
   findGalleryImagesByGalleryId,
   withGalleryImages,
 } from "@/lib/gallery-images";
-import { isAllowedImagePath } from "@/lib/media-path";
+import {
+  isAllowedImagePath,
+  isSameStoredImagePath,
+  normalizeStoredImagePath,
+} from "@/lib/media-path";
 import { unlinkUploadIfExists } from "@/lib/gallery-files";
 import { Gallery } from "@/server/database/entities/Gallery.entity";
 import { GalleryImage } from "@/server/database/entities/GalleryImage.entity";
@@ -159,14 +163,25 @@ export async function PATCH(
   }
 
   const { extra_images, ...galleryFields } = parsed.fields;
+
+  if (
+    galleryFields.image_path !== undefined &&
+    !isSameStoredImagePath(galleryFields.image_path, existing.image_path)
+  ) {
+    unlinkUploadIfExists(existing.image_path);
+  }
+
   if (Object.keys(galleryFields).length) {
     await galleryRepo.update(galleryId, galleryFields);
   }
 
   if (extra_images !== undefined) {
     const previousImages = await findGalleryImagesByGalleryId(galleryId);
+    const nextKeys = new Set(extra_images.map(normalizeStoredImagePath));
     for (const img of previousImages) {
-      unlinkUploadIfExists(img.image_path);
+      if (!nextKeys.has(normalizeStoredImagePath(img.image_path))) {
+        unlinkUploadIfExists(img.image_path);
+      }
     }
     await imageRepo.delete({ gallery_id: galleryId });
     if (extra_images.length) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import StoredImage from "@/components/StoredImage";
 import Select from "@/components/ui/Select";
 import {
   formatGalleryPrice,
@@ -115,7 +116,11 @@ export default function AdminGalleryPage() {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("folder", folder);
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      credentials: "include",
+      body: fd,
+    });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Upload failed");
     return data.path as string;
@@ -247,12 +252,11 @@ export default function AdminGalleryPage() {
               style={{ backgroundColor: "white", border: "1px solid #EDE5D8" }}
             >
               <div className="aspect-[4/3] relative">
-                <Image
+                <StoredImage
                   src={item.image_path}
                   alt={item.title || "Package"}
                   fill
                   className="object-cover"
-                  sizes="(max-width: 640px) 100vw, 33vw"
                 />
                 {(item.is_popular || item.is_trending) && (
                   <div className="absolute top-2 left-2 flex gap-1">
@@ -527,12 +531,22 @@ export default function AdminGalleryPage() {
                 </label>
                 {(coverPreview || coverPath) && (
                   <div className="h-40 rounded-lg overflow-hidden mb-2 relative">
-                    <Image
-                      src={coverPreview || coverPath}
-                      alt="Cover"
-                      fill
-                      className="object-cover"
-                    />
+                    {coverPreview ? (
+                      <Image
+                        src={coverPreview}
+                        alt="Cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <StoredImage
+                        src={coverPath}
+                        alt="Cover"
+                        fill
+                        className="object-cover"
+                      />
+                    )}
                   </div>
                 )}
                 <input

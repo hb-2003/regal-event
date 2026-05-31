@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, Suspense, useCallback, useMemo } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import StoredImage from "@/components/StoredImage";
 import { useSearchParams } from "next/navigation";
 import Select from "@/components/ui/Select";
 import PackageBookingSummary from "@/components/PackageBookingSummary";
@@ -308,12 +308,11 @@ function BookingForm() {
                   overflow: "hidden",
                 }}
               >
-                <Image
+                <StoredImage
                   src={galleryPackage.image_path}
                   alt={galleryPackage.title || "Selected setup"}
                   fill
                   style={{ objectFit: "cover" }}
-                  sizes="88px"
                 />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
